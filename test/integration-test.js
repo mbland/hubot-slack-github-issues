@@ -16,8 +16,9 @@ chai.should();
 chai.use(chaiAsPromised);
 
 describe('Integration test', function() {
-  var room, logHelper, apiStubServer, config, apiServerDefaults,
-      patchReactMethodOntoRoom, sendReaction, initLogMessages, wrapInfoMessages,
+  var room, listenerCallbackPromise, logHelper, apiStubServer, config,
+      apiServerDefaults, patchReactMethodOntoRoom, patchListenerCallbackAndImpl,
+      sendReaction, initLogMessages, wrapInfoMessages,
       matchingRule = 'Rule { reactionName: \'evergreen_tree\', ' +
         'githubRepository: \'handbook\' }';
 
@@ -59,14 +60,7 @@ describe('Integration test', function() {
       room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
     });
     patchReactMethodOntoRoom(room);
-    room.robot.listeners[0].callback.impl.slackClient.client = {
-      dataStore: {
-        getChannelById: function() {
-          return { name: 'handbook' };
-        }
-      },
-      team: { domain: '18f' }
-    };
+    patchListenerCallbackAndImpl(room);
     apiStubServer.urlsToResponses = apiServerDefaults();
   });
 
@@ -119,6 +113,25 @@ describe('Integration test', function() {
     };
   };
 
+  patchListenerCallbackAndImpl = function(room) {
+    var listener, callback;
+
+    listener = room.robot.listeners[0];
+    callback = listener.callback;
+    callback.impl.slackClient.client = {
+      dataStore: {
+        getChannelById: function() {
+          return { name: 'handbook' };
+        }
+      },
+      team: { domain: '18f' }
+    };
+
+    listener.callback = function(response) {
+      listenerCallbackPromise = callback(response);
+    };
+  };
+
   initLogMessages = function() {
     return [
       'INFO reading configuration from ' +
@@ -136,6 +149,8 @@ describe('Integration test', function() {
   sendReaction = function(reactionName) {
     logHelper.beginCapture();
     return room.user.react('mbland', reactionName)
+      .then(function() { return listenerCallbackPromise; })
+      .then(helpers.resolveNextTick, helpers.rejectNextTick)
       .then(logHelper.endCaptureResolve(), logHelper.endCaptureReject());
   };
 
@@ -192,7 +207,7 @@ describe('Integration test', function() {
 
     response.statusCode = 500;
     response.payload = payload;
-    return sendReaction(helpers.REACTION).should.be.fulfilled.then(function() {
+    return sendReaction(helpers.REACTION).should.be.rejected.then(function() {
       var errorReply = 'failed to create a GitHub issue in ' +
             '18F/handbook: received 500 response from GitHub API: ' +
             JSON.stringify(payload),

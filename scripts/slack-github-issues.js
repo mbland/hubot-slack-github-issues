@@ -33,7 +33,7 @@ module.exports = function(robot) {
     };
 
     fileIssue = function(response) {
-      impl.execute(response);
+      return impl.execute(response);
     };
     fileIssue.impl = impl;
 

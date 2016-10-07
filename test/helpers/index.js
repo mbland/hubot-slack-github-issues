@@ -84,5 +84,24 @@ exports = module.exports = {
     }
     args.unshift(exports.MESSAGE_ID);
     return args;
+  },
+
+  // resolveNextTick and rejectNextTick ensure that the event loop is flushed
+  // after a Promise is resolved or rejected.
+  //
+  // Usage:
+  //   var helpers = require('./helpers');
+  //   funcReturningPromise()
+  //     .then(helpers.resolveNextTick, helpers.rejectNextTick);
+  resolveNextTick: function(value) {
+    return new Promise(function(resolve) {
+      process.nextTick(function() { resolve(value); });
+    });
+  },
+
+  rejectNextTick: function(err) {
+    return new Promise(function(_, reject) {
+      process.nextTick(function() { reject(err); });
+    });
   }
 };
