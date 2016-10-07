@@ -49,21 +49,18 @@ Here are instructions for installing this plugin and putting it into use. If you
 
 1. In your Hubot repository, run:
    ```bash
-   $ npm install '18f/hubot-slack#3.4.2-handle-reaction-added' \
-       hubot-slack-github-issues --save
+   $ npm install hubot-slack hubot-slack-github-issues --save
    ```
-   
-   **Note:** This plugin depends upon
-[18F/hubot-slack#3.4.2-handle-reaction-added](https://github.com/18F/hubot-slack/tree/3.4.2-handle-reaction-added),
-which in turn depends upon
-[18F/node-slack-client#1.5.0-handle-reaction-added](https://github.com/18F/node-slack-client/tree/1.5.0-handle-reaction-added).
-These packages are custom forks of the
-[hubot-slack](https://www.npmjs.com/package/hubot-slack) and 
-[slack-client](https://www.npmjs.com/package/slack-client) packages that have
-had support for the [`reaction_added`
-event](https://api.slack.com/events/reaction_added) patched in. When those official packages have been updated to include `reaction_added`
-support, this plugin will be updated to use those packages instead of the
-custom versions.
+
+   **Note:** This plugin depends upon `hubot` v2.16.0 or higher and
+   `hubot-slack` v4.10.0 or higher. Make sure your `package.json` contains
+   version specifications resembling:
+   ```json
+   "dependencies": {
+     "hubot": "^2.16.0",
+     "hubot-slack": "^4.10.0"
+   }
+   ```
 
 1. Include the plugin in `external-scripts.json` in your Hubot repository:
    ```json
