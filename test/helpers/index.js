@@ -2,12 +2,13 @@
 
 var testConfig = require('./test-config.json');
 var SlackClient = require('../../lib/slack-client');
-var Hubot = require('hubot');
-var SlackBot = require('hubot-slack');
+var User = require('@slack/client/lib/models/user');
+var ReactionMessage = require('hubot-slack/src/reaction-message');
 
 exports = module.exports = {
   REACTION: 'evergreen_tree',
   USER_ID: 'U5150OU812',
+  ITEM_USER_ID: 'U1984OU812',
   CHANNEL_ID: 'C5150OU812',
   TIMESTAMP: '1360782804.083113',
   PERMALINK: 'https://18f.slack.com/archives/handbook/p1360782804083113',
@@ -18,28 +19,35 @@ exports = module.exports = {
     return JSON.parse(JSON.stringify(testConfig));
   },
 
+  // https://api.slack.com/events/reaction_added
   reactionAddedMessage: function() {
     return {
       type: SlackClient.REACTION_ADDED,
       user: exports.USER_ID,
+      reaction: exports.REACTION,
+      item_user: exports.ITEM_USER_ID, // eslint-disable-line camelcase
       item: {
         type: 'message',
         channel: exports.CHANNEL_ID,
         ts: exports.TIMESTAMP
       },
-      reaction: exports.REACTION,
       'event_ts': exports.TIMESTAMP
     };
   },
 
   fullReactionAddedMessage: function() {
-    var user, text, message;
-
-    user = new Hubot.User(exports.USER_ID,
-      { id: exports.USER_ID, name: 'jquser', room: 'handbook' });
-    text = exports.REACTION;
+    var user, itemUser, message;
     message = exports.reactionAddedMessage();
-    return new SlackBot.SlackTextMessage(user, text, text, message);
+
+    // https://api.slack.com/types/user
+    // node_modules/hubot-slack/src/bot.coffee
+    user = new User({ id: message.user, name: 'jquser' });
+    user.room = message.item.channel;
+    itemUser = new User({ id: message.item_user, name: 'rando' });
+
+    // node_modules/hubot-slack/src/reaction-message.coffee
+    return new ReactionMessage(message.type, user, message.reaction,
+      itemUser, message.item, message.event_ts);
   },
 
   messageWithReactions: function() {

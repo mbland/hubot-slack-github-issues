@@ -2,19 +2,23 @@
 
 var Rule = require('../lib/rule');
 var SlackClient = require('../lib/slack-client');
-var Channel = require('slack-client/src/channel');
+var Channel = require('@slack/client/lib/models/channel');
 var config = require('./helpers/test-config.json');
 var chai = require('chai');
 var expect = chai.expect;
 
 function SlackClientImplStub(channelName) {
+  var clientStub = this;
   this.channelName = channelName;
-}
 
-SlackClientImplStub.prototype.getChannelByID = function(channelId) {
-  this.channelId = channelId;
-  return new Channel(this, { name: this.channelName });
-};
+  this.dataStore = {
+    getChannelById: function (channelId) {
+      clientStub.channelId = channelId;
+      // https://api.slack.com/types/channel
+      return new Channel({ id: channelId, name: clientStub.channelName });
+    }
+  };
+}
 
 describe('Rule', function() {
   var makeConfigRule = function() {
@@ -29,6 +33,7 @@ describe('Rule', function() {
     return {
       type: 'reaction_added',
       user: 'U024BE7LH',
+      item_user: 'U1984OU812',  // eslint-disable-line camelcase
       item: {
         type: 'message',
         channel: 'C2147483705',

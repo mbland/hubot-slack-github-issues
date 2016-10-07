@@ -141,7 +141,7 @@ describe('Middleware', function() {
     });
 
     it('should ignore messages that do not match', function() {
-      delete context.response.message.rawMessage;
+      delete context.response.message;
       expect(middleware.execute(context, next, hubotDone)).to.be.undefined;
       next.calledWith(hubotDone).should.be.true;
     });
@@ -247,7 +247,7 @@ describe('Middleware', function() {
 
     it('should catch and log unanticipated errors', function() {
       var errorMessage = 'unhandled error: Error\nmessage: ' +
-            JSON.stringify(helpers.reactionAddedMessage(), null, 2);
+            JSON.stringify(helpers.fullReactionAddedMessage(), null, 2);
 
       slackClient.getChannelName.throws();
       expect(middleware.execute(context, next, hubotDone)).to.be.undefined;

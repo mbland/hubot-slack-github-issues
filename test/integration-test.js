@@ -60,8 +60,10 @@ describe('Integration test', function() {
     });
     patchReactMethodOntoRoom(room);
     room.robot.middleware.receive.stack[0].impl.slackClient.client = {
-      getChannelByID: function() {
-        return { name: 'handbook' };
+      dataStore: {
+        getChannelById: function() {
+          return { name: 'handbook' };
+        }
       },
       team: { domain: '18f' }
     };
@@ -111,7 +113,7 @@ describe('Integration test', function() {
 
         room.messages.push([userName, reaction]);
         reactionMessage.user.name = userName;
-        reactionMessage.rawMessage.reaction = reaction;
+        reactionMessage.reaction = reaction;
         room.robot.receive(reactionMessage, resolve);
       });
     };
