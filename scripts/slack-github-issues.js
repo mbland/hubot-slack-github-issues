@@ -12,8 +12,12 @@ var GitHubClient = require('../lib/github-client');
 var Logger = require('../lib/logger');
 var Middleware = require('../lib/middleware');
 
+// TODO(mbland): Remove this and switch to `robot.react` once a hubot-slack
+// release containing slackhq/hubot-slack#363 is available (after v4.10.0).
+var ReactionMessage = require('hubot-slack/src/reaction-message');
+
 module.exports = function(robot) {
-  var logger, config, impl, middleware;
+  var logger, config, impl, matchReaction, fileIssue;
 
   try {
     logger = new Logger(robot.logger);
@@ -24,15 +28,20 @@ module.exports = function(robot) {
       new GitHubClient(config),
       logger);
 
-    middleware = function(context, next, done) {
-      impl.execute(context, next, done);
+    matchReaction = function(msg) {
+      return msg instanceof ReactionMessage;
     };
-    middleware.impl = impl;
-    robot.receiveMiddleware(middleware);
-    logger.info(null, 'registered receiveMiddleware');
+
+    fileIssue = function(response) {
+      impl.execute(response);
+    };
+    fileIssue.impl = impl;
+
+    robot.listen(matchReaction, fileIssue);
+    logger.info(null, 'listening for reaction_added events');
 
   } catch (err) {
-    logger.error(null, 'receiveMiddleware registration failed:',
+    logger.error(null, 'reaction_added listener registration failed:',
       err instanceof Error ? err.message : err);
   }
 };

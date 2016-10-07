@@ -59,7 +59,7 @@ describe('Integration test', function() {
       room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
     });
     patchReactMethodOntoRoom(room);
-    room.robot.middleware.receive.stack[0].impl.slackClient.client = {
+    room.robot.listeners[0].callback.impl.slackClient.client = {
       dataStore: {
         getChannelById: function() {
           return { name: 'handbook' };
@@ -123,7 +123,7 @@ describe('Integration test', function() {
     return [
       'INFO reading configuration from ' +
         process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH,
-      'INFO registered receiveMiddleware'
+      'INFO listening for reaction_added events'
     ];
   };
 
@@ -156,7 +156,8 @@ describe('Integration test', function() {
       });
       logHelper.filteredMessages().should.eql([
         'INFO reading configuration from ' + invalidConfigPath,
-        'ERROR receiveMiddleware registration failed: Invalid configuration:'
+        'ERROR reaction_added listener registration failed: ' +
+          'Invalid configuration:'
       ]);
       logHelper.messages[logHelper.messages.length - 1].should.have.string(
         'Invalid configuration:\n  missing rules');

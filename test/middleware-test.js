@@ -51,9 +51,8 @@ describe('Middleware', function() {
     });
 
     it('should ignore a message if it is undefined', function() {
-      // When execute() tries to pass context.response.message.rawMessage from
-      // a message that doesn't have one, the argument to findMatchingRule()
-      // will be undefined.
+      // When execute() tries to pass response.message from a message that
+      // doesn't have one, the argument to findMatchingRule() will be undefined.
       expect(middleware.findMatchingRule(undefined)).to.be.undefined;
     });
 
@@ -95,17 +94,13 @@ describe('Middleware', function() {
   });
 
   describe('execute', function() {
-    var context, next, hubotDone, checkErrorResponse;
+    var response, checkErrorResponse;
 
     beforeEach(function() {
-      context = {
-        response: {
-          message: helpers.fullReactionAddedMessage(),
-          reply: sinon.spy()
-        }
+      response = {
+        message: helpers.fullReactionAddedMessage(),
+        reply: sinon.spy()
       };
-      next = sinon.spy();
-      hubotDone = sinon.spy();
 
       slackClient = sinon.stub(slackClient);
       githubClient = sinon.stub(githubClient);
@@ -122,14 +117,13 @@ describe('Middleware', function() {
     });
 
     it('should receive a message and file an issue', function() {
-      return middleware.execute(context, next, hubotDone)
+      return middleware.execute(response)
         .should.become(helpers.ISSUE_URL).then(function() {
           var matchingRule = new Rule(helpers.baseConfig().rules[1]);
 
-          context.response.reply.args.should.eql([
+          response.reply.args.should.eql([
             ['created: ' + helpers.ISSUE_URL]
           ]);
-          next.calledWith(hubotDone).should.be.true;
           logger.info.args.should.eql([
             helpers.logArgs('matches rule:', matchingRule),
             helpers.logArgs('getting reactions for', helpers.PERMALINK),
@@ -141,17 +135,16 @@ describe('Middleware', function() {
     });
 
     it('should ignore messages that do not match', function() {
-      delete context.response.message;
-      expect(middleware.execute(context, next, hubotDone)).to.be.undefined;
-      next.calledWith(hubotDone).should.be.true;
+      delete response.message;
+      expect(middleware.execute(response)).to.be.undefined;
     });
 
     it('should not file another issue for the same message when ' +
       'one is in progress', function() {
       var result;
 
-      result = middleware.execute(context, next, hubotDone);
-      expect(middleware.execute(context, next, hubotDone)).to.eql(undefined,
+      result = middleware.execute(response);
+      expect(middleware.execute(response)).to.eql(undefined,
         'middleware.execute did not prevent filing a second issue ' +
         'when one was already in progress');
 
@@ -162,7 +155,7 @@ describe('Middleware', function() {
         // Make another call to ensure that the ID is cleaned up. Normally the
         // message will have a successReaction after the first successful
         // request, but we'll test that in another case.
-        return middleware.execute(context, next, hubotDone)
+        return middleware.execute(response)
           .should.become(helpers.ISSUE_URL);
       });
     });
@@ -178,19 +171,19 @@ describe('Middleware', function() {
       });
       slackClient.getReactions.returns(Promise.resolve(message));
 
-      return middleware.execute(context, next, hubotDone)
+      return middleware.execute(response)
         .should.be.rejectedWith('already processed').then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
-          context.response.reply.called.should.be.false;
+          response.reply.called.should.be.false;
           logger.info.args.should.include.something.that.deep.equals(
             helpers.logArgs('already processed ' + helpers.PERMALINK));
         });
     });
 
     checkErrorResponse = function(errorMessage) {
-      context.response.reply.args.should.have.deep.property(
+      response.reply.args.should.have.deep.property(
         '[0][0].message', errorMessage);
       logger.error.args.should.have.deep.property('[0][0]', helpers.MESSAGE_ID);
       logger.error.args.should.have.deep.property('[0][1]', errorMessage);
@@ -203,7 +196,7 @@ describe('Middleware', function() {
       slackClient.getReactions
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(context, next, hubotDone)
+      return middleware.execute(response)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
@@ -219,7 +212,7 @@ describe('Middleware', function() {
       githubClient.fileNewIssue
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(context, next, hubotDone)
+      return middleware.execute(response)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
@@ -236,7 +229,7 @@ describe('Middleware', function() {
       slackClient.addSuccessReaction
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(context, next, hubotDone)
+      return middleware.execute(response)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
@@ -250,9 +243,8 @@ describe('Middleware', function() {
             JSON.stringify(helpers.fullReactionAddedMessage(), null, 2);
 
       slackClient.getChannelName.throws();
-      expect(middleware.execute(context, next, hubotDone)).to.be.undefined;
-      next.calledWith(hubotDone).should.be.true;
-      context.response.reply.args.should.eql([[errorMessage]]);
+      expect(middleware.execute(response)).to.be.undefined;
+      response.reply.args.should.eql([[errorMessage]]);
       logger.error.args.should.eql([[null, errorMessage]]);
     });
   });

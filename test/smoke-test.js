@@ -9,8 +9,9 @@ var expect = chai.expect;
 
 var rootDir = path.dirname(__dirname);
 var scriptName = require(path.join(rootDir, 'package.json')).name;
-var SUCCESS_MESSAGE = scriptName + ': registered receiveMiddleware';
-var FAILURE_MESSAGE = scriptName + ': receiveMiddleware registration failed: ';
+var SUCCESS_MESSAGE = scriptName + ': listening for reaction_added events';
+var FAILURE_MESSAGE = scriptName +
+  ': reaction_added listener registration failed: ';
 
 describe('Smoke test', function() {
   var checkHubot;
