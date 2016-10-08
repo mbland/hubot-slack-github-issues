@@ -17,14 +17,19 @@ var Middleware = require('../lib/middleware');
 var ReactionMessage = require('hubot-slack/src/reaction-message');
 
 module.exports = function(robot) {
-  var logger, config, impl, matchReaction, fileIssue;
+  var logger, config, slackClient, impl, matchReaction, fileIssue;
+
+  // This will be undefined when running under test.
+  if (robot.adapter.client) {
+    slackClient = robot.adapter.client.rtm;
+  }
 
   try {
     logger = new Logger(robot.logger);
     config = new Config(null, logger);
     impl = new Middleware(
       config,
-      new SlackClient(robot.adapter.client, config),
+      new SlackClient(slackClient, config),
       new GitHubClient(config),
       logger);
 
