@@ -16,8 +16,12 @@ var Middleware = require('../lib/middleware');
 // release containing slackhq/hubot-slack#363 is available (after v4.10.0).
 var ReactionMessage = require('hubot-slack/src/reaction-message');
 
+function matchReaction(message) {
+  return message instanceof ReactionMessage;
+}
+
 module.exports = function(robot) {
-  var logger, config, slackClient, impl, matchReaction, fileIssue;
+  var logger, config, slackClient, impl, fileIssue;
 
   // This will be undefined when running under test.
   if (robot.adapter.client) {
@@ -32,10 +36,6 @@ module.exports = function(robot) {
       new SlackClient(slackClient, config),
       new GitHubClient(config),
       logger);
-
-    matchReaction = function(msg) {
-      return msg instanceof ReactionMessage;
-    };
 
     fileIssue = function(response) {
       return impl.execute(response.message, function(message) {
