@@ -17,10 +17,14 @@ describe('Smoke test', function() {
   var checkHubot;
 
   beforeEach(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
   after(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
@@ -58,6 +62,8 @@ describe('Smoke test', function() {
   });
 
   it('should register successfully using the default config', function(done) {
+    process.env.HUBOT_GITHUB_TOKEN = '<github-api-token>';
+    process.env.HUBOT_SLACK_TOKEN = '<slack-api-token>';
     checkHubot(done, function(output) {
       output.should.have.string(SUCCESS_MESSAGE, 'script not registered');
     });

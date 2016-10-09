@@ -24,8 +24,8 @@ describe('Integration test', function() {
 
   before(function(done) {
     apiStubServer = new ApiStubServer();
-    process.env.HUBOT_SLACK_TOKEN = '<18F-github-token>';
-    process.env.HUBOT_GITHUB_TOKEN = '<18F-github-token>';
+    process.env.HUBOT_SLACK_TOKEN = '<hubot-slack-api-token>';
+    process.env.HUBOT_GITHUB_TOKEN = '<hubot-github-api-token>';
     config = helpers.baseConfig();
     config.slackApiBaseUrl = apiStubServer.address() + '/slack/';
     config.githubApiBaseUrl = apiStubServer.address() + '/github/';

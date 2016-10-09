@@ -11,21 +11,16 @@ chai.should();
 chai.use(chaiAsPromised);
 
 describe('SlackClient', function() {
-  var slackClient, config, slackApiServer, slackToken, setResponse, payload,
-      params;
+  var slackClient, config, slackApiServer, setResponse, payload, params;
 
   before(function() {
     slackApiServer = new ApiStubServer();
     config = helpers.baseConfig();
     config.slackApiBaseUrl = slackApiServer.address() + '/api/';
     slackClient = new SlackClient(undefined, config);
-
-    slackToken = '<18F-slack-api-token>';
-    process.env.HUBOT_SLACK_TOKEN = slackToken;
   });
 
   after(function() {
-    delete process.env.HUBOT_SLACK_TOKEN;
     slackApiServer.close();
   });
 
@@ -60,7 +55,7 @@ describe('SlackClient', function() {
       params = {
         channel: helpers.CHANNEL_ID,
         timestamp: helpers.TIMESTAMP,
-        token: slackToken
+        token: config.slackApiToken
       };
       payload = helpers.messageWithReactions();
     });
@@ -107,7 +102,7 @@ describe('SlackClient', function() {
         channel: helpers.CHANNEL_ID,
         timestamp: helpers.TIMESTAMP,
         name: config.successReaction,
-        token: slackToken
+        token: config.slackApiToken
       };
       payload = { ok: true };
     });

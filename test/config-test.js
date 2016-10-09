@@ -11,10 +11,14 @@ var expect = chai.expect;
 
 describe('Config', function() {
   before(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
   afterEach(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
@@ -27,8 +31,10 @@ describe('Config', function() {
 
   it('should raise errors for missing required fields', function() {
     var errors = [
+          'missing githubApiToken',
           'missing githubUser',
           'missing githubTimeout',
+          'missing slackApiToken',
           'missing slackTimeout',
           'missing successReaction',
           'missing rules'
@@ -108,6 +114,11 @@ describe('Config', function() {
         logger = new Logger(console),
         configPath = path.join('config', 'slack-github-issues.json'),
         config;
+
+    testConfig.githubApiToken = process.env.HUBOT_GITHUB_TOKEN =
+      '<github-api-token>';
+    testConfig.slackApiToken = process.env.HUBOT_SLACK_TOKEN =
+      '<slack-api-token>';
 
     sinon.stub(logger, 'info');
     config = new Config(null, logger);
