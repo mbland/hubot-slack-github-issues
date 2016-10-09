@@ -38,7 +38,9 @@ module.exports = function(robot) {
     };
 
     fileIssue = function(response) {
-      return impl.execute(response);
+      return impl.execute(response.message, function(message) {
+        response.reply(message);
+      });
     };
     fileIssue.impl = impl;
 
