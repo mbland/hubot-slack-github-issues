@@ -3,9 +3,12 @@
 //
 // Configuration:
 //   HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH
+//   HUBOT_GITHUB_TOKEN
+//   HUBOT_SLACK_TOKEN
 
 'use strict';
 
+var path = require('path');
 var Config = require('../lib/config');
 var SlackClient = require('../lib/slack-client');
 var GitHubClient = require('../lib/github-client');
@@ -20,6 +23,22 @@ function matchReaction(message) {
   return message instanceof ReactionMessage;
 }
 
+function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
+  var configPath = (
+        process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
+        path.join('config', 'slack-github-issues.json')
+      ),
+      config = Config.parseConfigFile(configPath, logger);
+
+  if (process.env.HUBOT_GITHUB_TOKEN) {
+    config.githubApiToken = process.env.HUBOT_GITHUB_TOKEN;
+  }
+  if (process.env.HUBOT_SLACK_TOKEN) {
+    config.slackApiToken = process.env.HUBOT_SLACK_TOKEN;
+  }
+  return config;
+}
+
 module.exports = function(robot) {
   var logger, config, slackClient, impl, fileIssue;
 
@@ -30,7 +49,8 @@ module.exports = function(robot) {
 
   try {
     logger = new Logger(robot.logger);
-    config = new Config(null, logger);
+    config = new Config(
+      parseConfigFromEnvironmentVariablePathOrUseDefault(logger));
     impl = new Middleware(
       config,
       new SlackClient(slackClient, config),
