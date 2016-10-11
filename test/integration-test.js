@@ -122,9 +122,12 @@ describe('Integration test', function() {
       dataStore: {
         getChannelById: function() {
           return { name: 'handbook' };
+        },
+        teams: {
+          T19845150: { domain: '18f' }
         }
       },
-      team: { domain: '18f' }
+      activeTeamId: 'T19845150'
     };
 
     listener.callback = function(response) {
