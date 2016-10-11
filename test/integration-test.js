@@ -206,29 +206,29 @@ describe('Integration test', function() {
   it('should fail to create a GitHub issue', function() {
     var payload = { message: 'test failure' },
         url = '/github/repos/18F/handbook/issues',
-        response = apiStubServer.urlsToResponses[url];
+        response = apiStubServer.urlsToResponses[url],
+        errorReply = 'failed to create a GitHub issue in 18F/handbook: ' +
+          'received 500 response from GitHub API: ' + JSON.stringify(payload);
 
     response.statusCode = 500;
     response.payload = payload;
-    return sendReaction(helpers.REACTION).should.be.rejected.then(function() {
-      var errorReply = 'failed to create a GitHub issue in ' +
-            '18F/handbook: received 500 response from GitHub API: ' +
-            JSON.stringify(payload),
-          logMessages;
+    return sendReaction(helpers.REACTION)
+      .should.be.rejectedWith(errorReply).then(function() {
+        var logMessages;
 
-      room.messages.should.eql([
-        ['mbland', 'evergreen_tree'],
-        ['hubot', '@mbland Error: ' + errorReply]
-      ]);
+        room.messages.should.eql([
+          ['mbland', 'evergreen_tree'],
+          ['hubot', '@mbland ' + errorReply]
+        ]);
 
-      logMessages = initLogMessages().concat(wrapInfoMessages([
-        'matches rule: ' + matchingRule,
-        'getting reactions for ' + helpers.PERMALINK,
-        'making GitHub request for ' + helpers.PERMALINK
-      ]));
-      logMessages.push('ERROR ' + helpers.MESSAGE_ID + ': ' + errorReply);
-      logHelper.filteredMessages().should.eql(logMessages);
-    });
+        logMessages = initLogMessages().concat(wrapInfoMessages([
+          'matches rule: ' + matchingRule,
+          'getting reactions for ' + helpers.PERMALINK,
+          'making GitHub request for ' + helpers.PERMALINK
+        ]));
+        logMessages.push('ERROR ' + helpers.MESSAGE_ID + ': ' + errorReply);
+        logHelper.filteredMessages().should.eql(logMessages);
+      });
   });
 
   it('should ignore a message receiving an unknown reaction', function() {
@@ -239,9 +239,10 @@ describe('Integration test', function() {
       response.payload = { message: 'should not happen' };
     });
 
-    return sendReaction('sad-face').should.be.fulfilled.then(function() {
-      room.messages.should.eql([['mbland', 'sad-face']]);
-      logHelper.filteredMessages().should.eql(initLogMessages());
-    });
+    return sendReaction('sad-face').should.be.rejectedWith(null)
+      .then(function() {
+        room.messages.should.eql([['mbland', 'sad-face']]);
+        logHelper.filteredMessages().should.eql(initLogMessages());
+      });
   });
 });

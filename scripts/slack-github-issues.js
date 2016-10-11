@@ -58,13 +58,19 @@ module.exports = function(robot) {
       logger);
 
     fileIssue = function(response) {
-      return impl.execute(response.message, function(message) {
-        if (message instanceof Error) {
-          response.reply(message.name + ': ' + message.message);
-        } else if (!message.startsWith('already ')) {
-          response.reply(message);
+      var onSuccess, onError;
+
+      onSuccess = function(issueUrl) {
+        response.reply('created: ' + issueUrl);
+        return issueUrl;
+      };
+      onError = function(err) {
+        if (err) {
+          response.reply(err.message || err);
         }
-      });
+        return Promise.reject(err);
+      };
+      return impl.execute(response.message).then(onSuccess, onError);
     };
     fileIssue.impl = impl;
 

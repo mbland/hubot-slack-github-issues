@@ -92,11 +92,10 @@ describe('Middleware', function() {
   });
 
   describe('execute', function() {
-    var message, reply, checkErrorResponse;
+    var message, checkErrorResponse;
 
     beforeEach(function() {
       message = helpers.fullReactionAddedMessage();
-      reply = sinon.spy();
 
       slackClient = sinon.stub(slackClient);
       githubClient = sinon.stub(githubClient);
@@ -113,13 +112,10 @@ describe('Middleware', function() {
     });
 
     it('should receive a message and file an issue', function() {
-      return middleware.execute(message, reply)
+      return middleware.execute(message)
         .should.become(helpers.ISSUE_URL).then(function() {
           var matchingRule = new Rule(helpers.baseConfig().rules[1]);
 
-          reply.args.should.eql([
-            ['created: ' + helpers.ISSUE_URL]
-          ]);
           logger.info.args.should.eql([
             helpers.logArgs('matches rule:', matchingRule),
             helpers.logArgs('getting reactions for', helpers.PERMALINK),
@@ -132,30 +128,26 @@ describe('Middleware', function() {
 
     it('should ignore messages that do not match', function() {
       message.type = 'reaction_removed';
-      expect(middleware.execute(message, reply)).to.be.undefined;
-      reply.called.should.be.false;
+      expect(middleware.execute(message)).to.be.rejectedWith(null);
     });
 
     it('should not file another issue for the same message when ' +
       'one is in progress', function() {
       var result;
 
-      result = middleware.execute(message, reply);
-      expect(middleware.execute(message, reply)).to.eql(undefined,
-        'middleware.execute did not prevent filing a second issue ' +
-        'when one was already in progress');
+      result = middleware.execute(message);
+      return middleware.execute(message).
+        should.be.rejectedWith(null).then(function() {
+          return result.should.become(helpers.ISSUE_URL).then(function() {
+            logger.info.args.should.include.something.that.deep.equals(
+              helpers.logArgs('already in progress'));
 
-      return result.should.become(helpers.ISSUE_URL).then(function() {
-        logger.info.args.should.include.something.that.deep.equals(
-          helpers.logArgs('already in progress'));
-        reply.calledOnce.should.be.true;
-
-        // Make another call to ensure that the ID is cleaned up. Normally the
-        // message will have a successReaction after the first successful
-        // request, but we'll test that in another case.
-        return middleware.execute(message, reply)
-          .should.become(helpers.ISSUE_URL);
-      });
+            // Make another call to ensure that the ID is cleaned up. Normally
+            // the message will have a successReaction after the first
+            // successful request, but we'll test that in another case.
+            return middleware.execute(message).should.become(helpers.ISSUE_URL);
+          });
+        });
     });
 
     it('should not file another issue for the same message when ' +
@@ -169,20 +161,17 @@ describe('Middleware', function() {
       });
       slackClient.getReactions.returns(Promise.resolve(messageWithReactions));
 
-      return middleware.execute(message, reply)
-        .should.be.rejectedWith('already processed').then(function() {
+      return middleware.execute(message)
+        .should.be.rejectedWith(null).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
-          reply.called.should.be.true;
           logger.info.args.should.include.something.that.deep.equals(
-            helpers.logArgs('already processed ' + helpers.PERMALINK));
+            helpers.logArgs('already processed:', helpers.PERMALINK));
         });
     });
 
     checkErrorResponse = function(errorMessage) {
-      reply.args.should.have.deep.property(
-        '[0][0].message', errorMessage);
       logger.error.args.should.have.deep.property('[0][0]', helpers.MESSAGE_ID);
       logger.error.args.should.have.deep.property('[0][1]', errorMessage);
     };
@@ -194,7 +183,7 @@ describe('Middleware', function() {
       slackClient.getReactions
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message, reply)
+      return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
@@ -210,7 +199,7 @@ describe('Middleware', function() {
       githubClient.fileNewIssue
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message, reply)
+      return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
@@ -227,7 +216,7 @@ describe('Middleware', function() {
       slackClient.addSuccessReaction
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message, reply)
+      return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
@@ -241,9 +230,8 @@ describe('Middleware', function() {
             JSON.stringify(helpers.fullReactionAddedMessage(), null, 2);
 
       slackClient.getChannelName.throws();
-      return middleware.execute(message, reply)
+      return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
-          reply.args.should.eql([[errorMessage]]);
           logger.error.args.should.eql([[null, errorMessage]]);
         });
     });
