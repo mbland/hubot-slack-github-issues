@@ -2,6 +2,8 @@
 
 var Helper = require('hubot-test-helper');
 var scriptHelper = new Helper('../scripts/slack-github-issues.js');
+var SlackRtmDataStore = require('../lib/slack-rtm-data-store.js');
+var Channel = require('@slack/client/lib/models/channel');
 var LogHelper = require('./helpers/log-helper');
 var ApiStubServer = require('./helpers/api-stub-server.js');
 var helpers = require('./helpers');
@@ -119,17 +121,17 @@ describe('Integration test', function() {
 
     listener = room.robot.listeners[0];
     callback = listener.callback;
-    callback.impl.slackClient.client = {
+    callback.impl.slackClient.dataStore = new SlackRtmDataStore({
       dataStore: {
-        getChannelById: function() {
-          return { name: 'bot-dev' };
+        getChannelById: function(channelId) {
+          return new Channel({ id: channelId, name: 'bot-dev' });
         },
         teams: {
           T19845150: { domain: 'mbland' }
         }
       },
       activeTeamId: 'T19845150'
-    };
+    });
 
     listener.callback = function(response) {
       listenerCallbackPromise = callback(response);

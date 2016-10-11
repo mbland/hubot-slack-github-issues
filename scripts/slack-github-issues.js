@@ -10,6 +10,7 @@
 
 var path = require('path');
 var Config = require('../lib/config');
+var SlackRtmDataStore = require('../lib/slack-rtm-data-store');
 var SlackClient = require('../lib/slack-client');
 var GitHubClient = require('../lib/github-client');
 var Logger = require('../lib/logger');
@@ -40,11 +41,11 @@ function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
 }
 
 module.exports = function(robot) {
-  var logger, config, slackClient, impl, fileIssue;
+  var logger, config, slackDataStore, impl, fileIssue;
 
   // This will be undefined when running under test.
   if (robot.adapter.client) {
-    slackClient = robot.adapter.client.rtm;
+    slackDataStore = new SlackRtmDataStore(robot.adapter.client.rtm);
   }
 
   try {
@@ -53,7 +54,7 @@ module.exports = function(robot) {
       parseConfigFromEnvironmentVariablePathOrUseDefault(logger));
     impl = new Middleware(
       config,
-      new SlackClient(slackClient, config),
+      new SlackClient(slackDataStore, config),
       new GitHubClient(config),
       logger);
 
