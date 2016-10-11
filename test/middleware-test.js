@@ -241,9 +241,11 @@ describe('Middleware', function() {
             JSON.stringify(helpers.fullReactionAddedMessage(), null, 2);
 
       slackClient.getChannelName.throws();
-      expect(middleware.execute(message, reply)).to.be.undefined;
-      reply.args.should.eql([[errorMessage]]);
-      logger.error.args.should.eql([[null, errorMessage]]);
+      return middleware.execute(message, reply)
+        .should.be.rejectedWith(errorMessage).then(function() {
+          reply.args.should.eql([[errorMessage]]);
+          logger.error.args.should.eql([[null, errorMessage]]);
+        });
     });
   });
 });
