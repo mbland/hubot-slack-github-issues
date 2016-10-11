@@ -174,7 +174,7 @@ describe('Middleware', function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
-          reply.called.should.be.false;
+          reply.called.should.be.true;
           logger.info.args.should.include.something.that.deep.equals(
             helpers.logArgs('already processed ' + helpers.PERMALINK));
         });

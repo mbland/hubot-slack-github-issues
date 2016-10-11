@@ -59,7 +59,11 @@ module.exports = function(robot) {
 
     fileIssue = function(response) {
       return impl.execute(response.message, function(message) {
-        response.reply(message);
+        if (message instanceof Error) {
+          response.reply(message.name + ': ' + message.message);
+        } else if (!message.startsWith('already ')) {
+          response.reply(message);
+        }
       });
     };
     fileIssue.impl = impl;
