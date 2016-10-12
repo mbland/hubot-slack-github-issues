@@ -10,14 +10,30 @@ var chaiAsPromised = require('chai-as-promised');
 chai.should();
 chai.use(chaiAsPromised);
 
+function SlackDataStoreStub() {
+  this.getChannelById = function(_, getChannelInfoFromApi) {
+    return getChannelInfoFromApi().then(function(response) {
+      return response.channel;
+    });
+  };
+
+  this.getTeamInfo = function(getTeamInfoFromApi) {
+    return getTeamInfoFromApi().then(function(response) {
+      return response.team;
+    });
+  };
+}
+
 describe('SlackClient', function() {
-  var slackClient, config, slackApiServer, setResponse, payload, params;
+  var slackClient, dataStoreStub, config, slackApiServer, setResponse, payload,
+      params;
 
   before(function() {
     slackApiServer = new ApiStubServer();
     config = helpers.baseConfig();
     config.slackApiBaseUrl = slackApiServer.address() + '/api/';
-    slackClient = new SlackClient(undefined, config);
+    dataStoreStub = new SlackDataStoreStub();
+    slackClient = new SlackClient(dataStoreStub, config);
   });
 
   after(function() {
@@ -47,6 +63,25 @@ describe('SlackClient', function() {
       var slackClient = new SlackClient(undefined, helpers.baseConfig());
       url.format(slackClient.baseurl).should.eql(SlackClient.API_BASE_URL);
       slackClient.requestFactory.globalAgent.protocol.should.eql('https:');
+    });
+  });
+
+  describe('getChannelName', function() {
+    it('should pass an API call to retrieve the info', function() {
+      params = { channel: helpers.CHANNEL_ID, token: config.slackApiToken };
+      payload = { ok: true, channel: { name: helpers.CHANNEL_NAME } };
+      setResponse('/api/channels.info', params, 200, payload);
+      return slackClient.getChannelName(helpers.CHANNEL_ID)
+        .should.become(helpers.CHANNEL_NAME);
+    });
+  });
+
+  describe('getTeamDomain', function() {
+    it('should pass an API call to retrieve the info', function() {
+      params = { token: config.slackApiToken };
+      payload = { ok: true, team: { domain: helpers.TEAM_DOMAIN } };
+      setResponse('/api/team.info', params, 200, payload);
+      return slackClient.getTeamDomain().should.become(helpers.TEAM_DOMAIN);
     });
   });
 

@@ -83,8 +83,8 @@ describe('Middleware', function() {
       githubClient = sinon.stub(githubClient);
       logger = sinon.stub(logger);
 
-      slackClient.getChannelName.returns('bot-dev');
-      slackClient.getTeamDomain.returns('mbland');
+      slackClient.getChannelName.returns(Promise.resolve('bot-dev'));
+      slackClient.getTeamDomain.returns(Promise.resolve('mbland'));
 
       slackClient.getReactions
         .returns(Promise.resolve(helpers.messageWithReactions()));

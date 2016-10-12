@@ -7,6 +7,8 @@ var ReactionMessage = require('hubot-slack/src/reaction-message');
 
 exports = module.exports = {
   REACTION: 'evergreen_tree',
+  TEAM_ID: 'T19845150',
+  TEAM_DOMAIN: 'mbland',
   USER_ID: 'U5150OU812',
   ITEM_USER_ID: 'U1984OU812',
   CHANNEL_ID: 'C5150OU812',
@@ -18,6 +20,20 @@ exports = module.exports = {
 
   baseConfig: function() {
     return JSON.parse(JSON.stringify(testConfig));
+  },
+
+  rtmClient: function() {
+    return {
+      dataStore: {
+        getChannelById: function(channelId) {
+          return { id: channelId, name: exports.CHANNEL_NAME };
+        },
+        teams: {
+          T19845150: { domain: exports.TEAM_DOMAIN }
+        }
+      },
+      activeTeamId: exports.TEAM_ID
+    };
   },
 
   // https://api.slack.com/events/reaction_added
