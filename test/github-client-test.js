@@ -31,7 +31,7 @@ describe('GitHubClient', function() {
   setResponse = function(statusCode, payload) {
     var metadata = helpers.metadata();
 
-    githubApiServer.urlsToResponses['/repos/18F/handbook/issues'] = {
+    githubApiServer.urlsToResponses['/repos/mbland/handbook/issues'] = {
       expectedParams: {
         title: metadata.title,
         body: metadata.url

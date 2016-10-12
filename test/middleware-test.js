@@ -75,7 +75,7 @@ describe('Middleware', function() {
 
     beforeEach(function() {
       getChannelName = sinon.stub(slackClient, 'getChannelName');
-      getChannelName.returns('handbook');
+      getChannelName.returns('bot-dev');
     });
 
     afterEach(function() {
@@ -101,8 +101,8 @@ describe('Middleware', function() {
       githubClient = sinon.stub(githubClient);
       logger = sinon.stub(logger);
 
-      slackClient.getChannelName.returns('handbook');
-      slackClient.getTeamDomain.returns('18f');
+      slackClient.getChannelName.returns('bot-dev');
+      slackClient.getTeamDomain.returns('mbland');
 
       slackClient.getReactions
         .returns(Promise.resolve(helpers.messageWithReactions()));
@@ -114,7 +114,7 @@ describe('Middleware', function() {
     it('should receive a message and file an issue', function() {
       return middleware.execute(message)
         .should.become(helpers.ISSUE_URL).then(function() {
-          var matchingRule = new Rule(helpers.baseConfig().rules[1]);
+          var matchingRule = new Rule(helpers.baseConfig().rules[0]);
 
           logger.info.args.should.eql([
             helpers.logArgs('matches rule:', matchingRule.toLogString()),
@@ -193,8 +193,8 @@ describe('Middleware', function() {
     });
 
     it('should get reactions but fail to file an issue', function() {
-      var errorMessage = 'failed to create a GitHub issue in 18F/handbook: ' +
-        'test failure';
+      var errorMessage = 'failed to create a GitHub issue in ' +
+        'mbland/slack-github-issues: test failure';
 
       githubClient.fileNewIssue
         .returns(Promise.reject(new Error('test failure')));

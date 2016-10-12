@@ -20,7 +20,8 @@ describe('Integration test', function() {
       apiServerDefaults, patchReactMethodOntoRoom, patchListenerCallbackAndImpl,
       sendReaction, initLogMessages, wrapInfoMessages,
       matchingRule = 'reactionName: evergreen_tree, ' +
-        'githubRepository: handbook';
+        'githubRepository: slack-github-issues, ' +
+        'channelNames: bot-dev';
 
   before(function(done) {
     apiStubServer = new ApiStubServer();
@@ -57,7 +58,7 @@ describe('Integration test', function() {
   beforeEach(function() {
     logHelper = new LogHelper();
     logHelper.capture(function() {
-      room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
+      room = scriptHelper.createRoom({ httpd: false, name: 'bot-dev' });
     });
     patchReactMethodOntoRoom(room);
     patchListenerCallbackAndImpl(room);
@@ -77,7 +78,7 @@ describe('Integration test', function() {
         statusCode: 200,
         payload: helpers.messageWithReactions()
       },
-      '/github/repos/18F/handbook/issues': {
+      '/github/repos/mbland/slack-github-issues/issues': {
         expectedParams: {
           title: metadata.title,
           body: metadata.url
@@ -121,10 +122,10 @@ describe('Integration test', function() {
     callback.impl.slackClient.client = {
       dataStore: {
         getChannelById: function() {
-          return { name: 'handbook' };
+          return { name: 'bot-dev' };
         },
         teams: {
-          T19845150: { domain: '18f' }
+          T19845150: { domain: 'mbland' }
         }
       },
       activeTeamId: 'T19845150'
@@ -170,7 +171,7 @@ describe('Integration test', function() {
       process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = invalidConfigPath;
       logHelper = new LogHelper();
       logHelper.capture(function() {
-        room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
+        room = scriptHelper.createRoom({ httpd: false, name: 'bot-dev' });
       });
       logHelper.filteredMessages().should.eql([
         'INFO reading configuration from ' + invalidConfigPath,
@@ -205,9 +206,10 @@ describe('Integration test', function() {
 
   it('should fail to create a GitHub issue', function() {
     var payload = { message: 'test failure' },
-        url = '/github/repos/18F/handbook/issues',
+        url = '/github/repos/mbland/slack-github-issues/issues',
         response = apiStubServer.urlsToResponses[url],
-        errorReply = 'failed to create a GitHub issue in 18F/handbook: ' +
+        errorReply = 'failed to create a GitHub issue in ' +
+          'mbland/slack-github-issues: ' +
           'received 500 response from GitHub API: ' + JSON.stringify(payload);
 
     response.statusCode = 500;

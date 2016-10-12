@@ -1,5 +1,5 @@
 {
-  "githubUser": "18F",
+  "githubUser": "mbland",
   "githubTimeout": 5000,
   "slackTimeout": 5000,
   "successReaction": "heavy_check_mark"

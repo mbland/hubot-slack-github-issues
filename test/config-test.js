@@ -58,7 +58,7 @@ describe('Config', function() {
     configData.rules[0].xyzzy = 'plugh';
     configData.rules.push({
       'reactionName': 'smiley',
-      'githubRepository': '18F/hubot-slack-github-issues',
+      'githubRepository': 'mbland/slack-github-issues',
       'channelNames': ['hub'],
       'quux': {}
     });
@@ -133,8 +133,8 @@ describe('Config', function() {
           githubRepository: 'hubot-slack-github-issues'
         },
         { reactionName: 'evergreen_tree',
-          githubRepository: 'hub',
-          channelNames: ['hub']
+          githubRepository: 'slack-github-issues',
+          channelNames: ['bot-dev']
         },
         { reactionName: 'evergreen_tree',
           githubRepository: 'handbook'
@@ -159,8 +159,8 @@ describe('Config', function() {
           githubRepository: 'handbook'
         },
         { reactionName: 'evergreen_tree',
-          githubRepository: 'hub',
-          channelNames: ['hub']
+          githubRepository: 'slack-github-issues',
+          channelNames: ['bot-dev']
         },
         { reactionName: 'smiley',
           githubRepository: 'hubot-slack-github-issues'

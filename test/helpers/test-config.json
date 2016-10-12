@@ -1,6 +1,6 @@
 {
   "githubApiToken": "<github-api-token>",
-  "githubUser": "18F",
+  "githubUser": "mbland",
   "githubTimeout": 5000,
   "slackApiToken": "<slack-api-token>",
   "slackTimeout": 5000,
@@ -8,8 +8,8 @@
   "rules": [
     {
       "reactionName": "evergreen_tree",
-      "githubRepository": "hub",
-      "channelNames": ["hub"]
+      "githubRepository": "slack-github-issues",
+      "channelNames": ["bot-dev"]
     },
 
     {

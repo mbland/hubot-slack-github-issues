@@ -10,9 +10,10 @@ exports = module.exports = {
   USER_ID: 'U5150OU812',
   ITEM_USER_ID: 'U1984OU812',
   CHANNEL_ID: 'C5150OU812',
+  CHANNEL_NAME: 'bot-dev',
   TIMESTAMP: '1360782804.083113',
-  PERMALINK: 'https://18f.slack.com/archives/handbook/p1360782804083113',
-  ISSUE_URL: 'https://github.com/18F/handbook/issues/1',
+  PERMALINK: 'https://mbland.slack.com/archives/bot-dev/p1360782804083113',
+  ISSUE_URL: 'https://github.com/mbland/slack-github-issues/issues/1',
   MESSAGE_ID: 'C5150OU812:1360782804.083113',
 
   baseConfig: function() {
@@ -67,11 +68,12 @@ exports = module.exports = {
 
   metadata: function() {
     return {
-      channel: 'handbook',
+      channel: exports.CHANNEL_NAME,
       timestamp: exports.TIMESTAMP,
       url: exports.PERMALINK,
       date: new Date(1360782804.083113 * 1000),
-      title: 'Update from #handbook at Wed, 13 Feb 2013 19:13:24 GMT'
+      title: 'Update from #' + exports.CHANNEL_NAME +
+        ' at Wed, 13 Feb 2013 19:13:24 GMT'
     };
   },
 
