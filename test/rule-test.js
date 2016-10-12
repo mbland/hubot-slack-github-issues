@@ -1,24 +1,8 @@
 'use strict';
 
 var Rule = require('../lib/rule');
-var SlackClient = require('../lib/slack-client');
-var Channel = require('@slack/client/lib/models/channel');
-var config = require('./helpers/test-config.json');
 var chai = require('chai');
 var expect = chai.expect;
-
-function SlackClientImplStub(channelName) {
-  var clientStub = this;
-  this.channelName = channelName;
-
-  this.dataStore = {
-    getChannelById: function (channelId) {
-      clientStub.channelId = channelId;
-      // https://api.slack.com/types/channel
-      return new Channel({ id: channelId, name: clientStub.channelName });
-    }
-  };
-}
 
 describe('Rule', function() {
   var makeConfigRule = function() {
@@ -75,45 +59,29 @@ describe('Rule', function() {
 
   it('should match a message from one of the channelNames', function() {
     var rule = new Rule(makeConfigRule()),
-        message = makeMessage(),
-        slackClientImpl = new SlackClientImplStub('bot-dev'),
-        slackClient = new SlackClient(slackClientImpl, config);
-    expect(rule.match(message, slackClient)).to.be.true;
-    expect(slackClientImpl.channelId).to.eql(message.item.channel);
+        message = makeMessage();
+    expect(rule.match(message, 'bot-dev')).to.be.true;
   });
 
   it('should ignore a message if its name does not match', function() {
     var configRule = makeConfigRule(),
         message = makeMessage(),
-        slackClientImpl = new SlackClientImplStub('bot-dev'),
-        slackClient = new SlackClient(slackClientImpl, config),
         rule;
-
     configRule.reactionName = 'sad-face';
     rule = new Rule(configRule);
-
-    expect(rule.match(message, slackClient)).to.be.false;
-    expect(slackClientImpl.channelId).to.be.undefined;
+    expect(rule.match(message, 'bot-dev')).to.be.false;
   });
 
   it('should match a message from any channel', function() {
     var rule = new Rule(makeConfigRule()),
-        message = makeMessage(),
-        slackClientImpl = new SlackClientImplStub('bot-dev'),
-        slackClient = new SlackClient(slackClientImpl, config);
-
+        message = makeMessage();
     delete rule.channelNames;
-    expect(rule.match(message, slackClient)).to.be.true;
-    expect(slackClientImpl.channelId).to.be.undefined;
+    expect(rule.match(message, 'general')).to.be.true;
   });
 
   it('should ignore a message if its channel doesn\'t match', function() {
     var rule = new Rule(makeConfigRule()),
-        message = makeMessage(),
-        slackClientImpl = new SlackClientImplStub('not-bot-dev'),
-        slackClient = new SlackClient(slackClientImpl, config);
-
-    expect(rule.match(message, slackClient)).to.be.false;
-    expect(slackClientImpl.channelId).to.eql(message.item.channel);
+        message = makeMessage();
+    expect(rule.match(message, 'not-bot-dev')).to.be.false;
   });
 });
