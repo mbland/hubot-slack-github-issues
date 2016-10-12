@@ -19,8 +19,8 @@ describe('Integration test', function() {
   var room, listenerCallbackPromise, logHelper, apiStubServer, config,
       apiServerDefaults, patchReactMethodOntoRoom, patchListenerCallbackAndImpl,
       sendReaction, initLogMessages, wrapInfoMessages,
-      matchingRule = 'Rule { reactionName: \'evergreen_tree\', ' +
-        'githubRepository: \'handbook\' }';
+      matchingRule = 'reactionName: evergreen_tree, ' +
+        'githubRepository: handbook';
 
   before(function(done) {
     apiStubServer = new ApiStubServer();

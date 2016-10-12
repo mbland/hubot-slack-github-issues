@@ -117,7 +117,7 @@ describe('Middleware', function() {
           var matchingRule = new Rule(helpers.baseConfig().rules[1]);
 
           logger.info.args.should.eql([
-            helpers.logArgs('matches rule:', matchingRule),
+            helpers.logArgs('matches rule:', matchingRule.toLogString()),
             helpers.logArgs('getting reactions for', helpers.PERMALINK),
             helpers.logArgs('making GitHub request for', helpers.PERMALINK),
             helpers.logArgs('adding', helpers.baseConfig().successReaction),
