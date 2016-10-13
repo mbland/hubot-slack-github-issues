@@ -67,23 +67,9 @@ describe('Middleware', function() {
   });
 
   describe('parseMetadata', function() {
-    var getChannelName;
-
-    beforeEach(function() {
-      getChannelName = sinon.stub(slackClient, 'getChannelName');
-      getChannelName.returns('bot-dev');
-    });
-
-    afterEach(function() {
-      getChannelName.restore();
-    });
-
     it('should parse GitHub request metadata from a message', function() {
-      middleware.parseMetadata(helpers.messageWithReactions())
+      middleware.parseMetadata(helpers.messageWithReactions(), 'bot-dev')
         .should.eql(helpers.metadata());
-      getChannelName.calledOnce.should.be.true;
-      getChannelName.args.should.have.deep.property('[0]')
-        .that.deep.equals([helpers.CHANNEL_ID]);
     });
   });
 
