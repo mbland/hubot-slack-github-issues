@@ -29,21 +29,16 @@ describe('Middleware', function() {
   });
 
   describe('findMatchingRule', function() {
-    var getChannelName, message;
+    var channelName, message;
 
     beforeEach(function() {
-      getChannelName = sinon.stub(slackClient, 'getChannelName');
-      getChannelName.returns('not-any-channel-from-any-config-rule');
+      channelName = 'not-any-channel-from-any-config-rule';
       message = helpers.reactionAddedMessage();
-    });
-
-    afterEach(function() {
-      getChannelName.restore();
     });
 
     it('should find the rule matching the message', function() {
       var expected = config.rules[1],
-          result = middleware.findMatchingRule(message);
+          result = middleware.findMatchingRule(message, channelName);
 
       result.reactionName.should.equal(expected.reactionName);
       result.githubRepository.should.equal(expected.githubRepository);
@@ -51,22 +46,23 @@ describe('Middleware', function() {
     });
 
     it('should ignore a message if it is undefined', function() {
-      expect(middleware.findMatchingRule(undefined)).to.be.undefined;
+      expect(middleware.findMatchingRule(undefined, channelName))
+        .to.be.undefined;
     });
 
     it('should ignore a message if its type does not match', function() {
       message.type = 'hello';
-      expect(middleware.findMatchingRule(message)).to.be.undefined;
+      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
     });
 
     it('should ignore a message if its item type does not match', function() {
       message.item.type = 'file';
-      expect(middleware.findMatchingRule(message)).to.be.undefined;
+      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
     });
 
     it('should ignore messages that do not match any rule', function() {
       message.reaction = 'sad-face';
-      expect(middleware.findMatchingRule(message)).to.be.undefined;
+      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
     });
   });
 
