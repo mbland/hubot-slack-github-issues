@@ -95,7 +95,7 @@ describe('Middleware', function() {
     var message, checkErrorResponse;
 
     beforeEach(function() {
-      message = helpers.fullReactionAddedMessage();
+      message = helpers.reactionAddedMessage();
 
       slackClient = sinon.stub(slackClient);
       githubClient = sinon.stub(githubClient);
@@ -227,7 +227,7 @@ describe('Middleware', function() {
 
     it('should catch and log unanticipated errors', function() {
       var errorMessage = 'unhandled error: Error\nmessage: ' +
-            JSON.stringify(helpers.fullReactionAddedMessage(), null, 2);
+            JSON.stringify(helpers.reactionAddedMessage(), null, 2);
 
       slackClient.getChannelName.throws();
       return middleware.execute(message)
