@@ -53,19 +53,17 @@ module.exports = function(robot) {
       logger);
 
     fileIssue = function(response) {
-      var onSuccess, onError;
-
-      onSuccess = function(issueUrl) {
-        response.reply('created: ' + issueUrl);
-        return issueUrl;
-      };
-      onError = function(err) {
-        if (err) {
-          response.reply(err.message || err);
-        }
-        return Promise.reject(err);
-      };
-      return impl.execute(response.message).then(onSuccess, onError);
+      return impl.execute(response.message)
+        .then(function(issueUrl) {
+          response.reply('created: ' + issueUrl);
+          return issueUrl;
+        })
+        .catch(function(err) {
+          if (err) {
+            response.reply(err.message || err);
+          }
+          return Promise.reject(err);
+        });
     };
     fileIssue.impl = impl;
 
