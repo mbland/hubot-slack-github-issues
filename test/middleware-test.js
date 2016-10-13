@@ -185,6 +185,8 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
     });
@@ -197,6 +199,8 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
     });
@@ -210,9 +214,6 @@ describe('Middleware', function() {
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
-          slackClient.getReactions.calledOnce.should.be.false;
-          githubClient.fileNewIssue.called.should.be.false;
-          slackClient.addSuccessReaction.called.should.be.false;
           messageLock.unlock.calledOnce.should.be.false;
           checkErrorResponse(errorMessage);
         });
