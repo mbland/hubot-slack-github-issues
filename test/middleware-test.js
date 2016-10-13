@@ -119,7 +119,11 @@ describe('Middleware', function() {
 
     it('should ignore messages that do not match', function() {
       message.type = 'reaction_removed';
-      expect(middleware.execute(message)).to.be.rejectedWith(null);
+      return middleware.execute(message).should.be.rejectedWith(null)
+        .then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
+        });
     });
 
     it('should not file another issue for the same message when ' +
@@ -198,8 +202,7 @@ describe('Middleware', function() {
     });
 
     it('reports an error when acquiring the message lock', function() {
-      var errorMessage = 'failed to acquire lock for ' + helpers.PERMALINK +
-        ': test failure';
+      var errorMessage = 'failed to acquire lock: test failure';
 
       messageLock.lock.onFirstCall()
         .returns(Promise.reject(new Error('test failure')));
