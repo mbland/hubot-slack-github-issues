@@ -173,6 +173,48 @@ describe('Middleware', function() {
       logger.error.args.should.have.deep.property('[0][1]', errorMessage);
     };
 
+    it('reports an error when getting the channel name', function() {
+      var errorMessage = 'failed to get channel name: test failure';
+
+      slackClient.getChannelName
+        .returns(Promise.reject(new Error('test failure')));
+
+      return middleware.execute(message)
+        .should.be.rejectedWith(errorMessage).then(function() {
+          checkErrorResponse(errorMessage);
+        });
+    });
+
+    it('reports an error when getting the team domain name', function() {
+      var errorMessage = 'failed to get team domain name: test failure';
+
+      slackClient.getTeamDomain
+        .returns(Promise.reject(new Error('test failure')));
+
+      return middleware.execute(message)
+        .should.be.rejectedWith(errorMessage).then(function() {
+          checkErrorResponse(errorMessage);
+        });
+    });
+
+    it('reports an error when acquiring the message lock', function() {
+      var errorMessage = 'failed to acquire lock for ' + helpers.PERMALINK +
+        ': test failure';
+
+      messageLock.lock.onFirstCall()
+        .returns(Promise.reject(new Error('test failure')));
+
+      return middleware.execute(message)
+        .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          slackClient.getReactions.calledOnce.should.be.false;
+          githubClient.fileNewIssue.called.should.be.false;
+          slackClient.addSuccessReaction.called.should.be.false;
+          messageLock.unlock.calledOnce.should.be.false;
+          checkErrorResponse(errorMessage);
+        });
+    });
+
     it('should receive a message but fail to get reactions', function() {
       var errorMessage = 'failed to get reactions for ' + helpers.PERMALINK +
         ': test failure';
@@ -223,6 +265,23 @@ describe('Middleware', function() {
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
           slackClient.addSuccessReaction.calledOnce.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
+          checkErrorResponse(errorMessage);
+        });
+    });
+
+    it('reports an error when releasing the message lock', function() {
+      var errorMessage = 'failed to release lock for ' + helpers.PERMALINK +
+        ': test failure';
+
+      messageLock.unlock.returns(Promise.reject(new Error('test failure')));
+
+      return middleware.execute(message)
+        .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          slackClient.getReactions.calledOnce.should.be.true;
+          githubClient.fileNewIssue.called.should.be.true;
+          slackClient.addSuccessReaction.called.should.be.true;
           messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
