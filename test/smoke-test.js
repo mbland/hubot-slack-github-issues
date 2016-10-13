@@ -29,7 +29,8 @@ describe('Smoke test', function() {
   });
 
   checkHubot = function(done, validateOutput) {
-    exec('hubot -t', { cwd: rootDir }, function(error, stdout, stderr) {
+    var hubotCmd = 'hubot -t --adapter slack';
+    exec(hubotCmd, { cwd: rootDir }, function(error, stdout, stderr) {
       try {
         expect(error).to.be.null;
         stderr.should.eql('');

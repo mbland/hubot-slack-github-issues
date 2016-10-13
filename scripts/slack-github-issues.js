@@ -17,14 +17,6 @@ var MessageLock = require('../lib/message-lock');
 var Logger = require('../lib/logger');
 var Middleware = require('../lib/middleware');
 
-// TODO(mbland): Remove this and switch to `robot.react` once a hubot-slack
-// release containing slackhq/hubot-slack#363 is available (after v4.10.0).
-var ReactionMessage = require('hubot-slack/src/reaction-message');
-
-function matchReaction(message) {
-  return message instanceof ReactionMessage;
-}
-
 function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
   var configPath = (
         process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
@@ -77,7 +69,7 @@ module.exports = function(robot) {
     };
     fileIssue.impl = impl;
 
-    robot.listen(matchReaction, fileIssue);
+    robot.react(fileIssue);
     logger.info(null, 'listening for reaction_added events');
 
   } catch (err) {

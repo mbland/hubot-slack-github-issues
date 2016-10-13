@@ -14,6 +14,10 @@ var scriptName = require('../package.json').name;
 var chai = require('chai');
 var chaiAsPromised = require('chai-as-promised');
 
+// The Robot.react method is defined in the hubot-slack adapter package. We need
+// to make sure the function definition executes before executing the script.
+require('hubot-slack');
+
 chai.should();
 chai.use(chaiAsPromised);
 
