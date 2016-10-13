@@ -13,6 +13,7 @@ var Config = require('../lib/config');
 var SlackRtmDataStore = require('../lib/slack-rtm-data-store');
 var SlackClient = require('../lib/slack-client');
 var GitHubClient = require('../lib/github-client');
+var MessageLock = require('../lib/message-lock');
 var Logger = require('../lib/logger');
 var Middleware = require('../lib/middleware');
 
@@ -56,6 +57,7 @@ module.exports = function(robot) {
       config,
       new SlackClient(slackDataStore, config),
       new GitHubClient(config),
+      new MessageLock,
       logger);
 
     fileIssue = function(response) {

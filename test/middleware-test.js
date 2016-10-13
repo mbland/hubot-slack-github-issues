@@ -5,6 +5,7 @@ var Config = require('../lib/config');
 var Rule = require('../lib/rule');
 var GitHubClient = require('../lib/github-client');
 var SlackClient = require('../lib/slack-client');
+var MessageLock = require('../lib/message-lock');
 var Logger = require('../lib/logger');
 var helpers = require('./helpers');
 var chai = require('chai');
@@ -18,14 +19,16 @@ chai.use(chaiAsPromised);
 chai.use(chaiThings);
 
 describe('Middleware', function() {
-  var config, slackClient, githubClient, logger, middleware;
+  var config, slackClient, githubClient, messageLock, logger, middleware;
 
   beforeEach(function() {
     config = new Config(helpers.baseConfig());
     slackClient = new SlackClient(undefined, config);
     githubClient = new GitHubClient(config);
+    messageLock = new MessageLock;
     logger = new Logger(console);
-    middleware = new Middleware(config, slackClient, githubClient, logger);
+    middleware = new Middleware(config, slackClient, githubClient, messageLock,
+      logger);
   });
 
   describe('findMatchingRule', function() {
@@ -81,16 +84,22 @@ describe('Middleware', function() {
 
       slackClient = sinon.stub(slackClient);
       githubClient = sinon.stub(githubClient);
+      messageLock = sinon.stub(messageLock);
       logger = sinon.stub(logger);
 
       slackClient.getChannelName.returns(Promise.resolve('bot-dev'));
       slackClient.getTeamDomain.returns(Promise.resolve('mbland'));
+
+      messageLock.lock.onFirstCall()
+        .returns(Promise.resolve(helpers.MESSAGE_ID));
+      messageLock.lock.onSecondCall().returns(Promise.resolve(false));
 
       slackClient.getReactions
         .returns(Promise.resolve(helpers.messageWithReactions()));
       githubClient.fileNewIssue.returns(Promise.resolve(helpers.ISSUE_URL));
       slackClient.addSuccessReaction
         .returns(Promise.resolve(helpers.ISSUE_URL));
+      messageLock.unlock.returns(Promise.resolve(helpers.MESSAGE_ID));
     });
 
     it('should receive a message and file an issue', function() {
@@ -118,15 +127,18 @@ describe('Middleware', function() {
       var result;
 
       result = middleware.execute(message);
-      return middleware.execute(message).
-        should.be.rejectedWith(null).then(function() {
+      return middleware.execute(message).should.be.rejectedWith(null)
+        .then(function() {
           return result.should.become(helpers.ISSUE_URL).then(function() {
+            messageLock.lock.calledTwice.should.be.true;
+            messageLock.unlock.calledOnce.should.be.true;
             logger.info.args.should.include.something.that.deep.equals(
               helpers.logArgs('already in progress'));
 
             // Make another call to ensure that the ID is cleaned up. Normally
             // the message will have a successReaction after the first
             // successful request, but we'll test that in another case.
+            messageLock.lock.returns(Promise.resolve(helpers.MESSAGE_ID));
             return middleware.execute(message).should.become(helpers.ISSUE_URL);
           });
         });
@@ -145,9 +157,12 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(null).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
+          messageLock.unlock.calledOnce.should.be.true;
+          slackClient.getReactions.calledOnce.should.be.true;
           logger.info.args.should.include.something.that.deep.equals(
             helpers.logArgs('already processed:', helpers.PERMALINK));
         });
@@ -167,9 +182,11 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
+          messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
     });
@@ -183,9 +200,11 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
           slackClient.addSuccessReaction.called.should.be.false;
+          messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
     });
@@ -200,9 +219,11 @@ describe('Middleware', function() {
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
+          messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
           githubClient.fileNewIssue.calledOnce.should.be.true;
           slackClient.addSuccessReaction.calledOnce.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
           checkErrorResponse(errorMessage);
         });
     });
