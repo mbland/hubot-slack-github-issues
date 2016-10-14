@@ -66,22 +66,23 @@ describe('SlackClient', function() {
     });
   });
 
-  describe('getChannelName', function() {
+  describe('getChannel', function() {
     it('should pass an API call to retrieve the info', function() {
       params = { channel: helpers.CHANNEL_ID, token: config.slackApiToken };
       payload = { ok: true, channel: { name: helpers.CHANNEL_NAME } };
       setResponse('/api/channels.info', params, 200, payload);
-      return slackClient.getChannelName(helpers.CHANNEL_ID)
-        .should.become(helpers.CHANNEL_NAME);
+      return slackClient.getChannel(helpers.CHANNEL_ID)
+        .should.become({ name: helpers.CHANNEL_NAME });
     });
   });
 
-  describe('getTeamDomain', function() {
+  describe('getTeam', function() {
     it('should pass an API call to retrieve the info', function() {
       params = { token: config.slackApiToken };
       payload = { ok: true, team: { domain: helpers.TEAM_DOMAIN } };
       setResponse('/api/team.info', params, 200, payload);
-      return slackClient.getTeamDomain().should.become(helpers.TEAM_DOMAIN);
+      return slackClient.getTeam()
+        .should.become({ domain: helpers.TEAM_DOMAIN });
     });
   });
 
