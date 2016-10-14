@@ -296,13 +296,13 @@ describe('Middleware', function() {
     });
 
     it('should catch and log unanticipated errors', function() {
-      var errorMessage = 'unhandled error: Error\nmessage: ' +
-            JSON.stringify(helpers.reactionAddedMessage(), null, 2);
+      var errorMessage = 'Error: message: ' +
+        JSON.stringify(helpers.reactionAddedMessage(), null, 0);
 
       slackClient.channelInfo.throws();
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
-          logger.error.args.should.eql([[null, errorMessage]]);
+          logger.error.args.should.eql([[helpers.MESSAGE_ID, errorMessage]]);
         });
     });
   });
