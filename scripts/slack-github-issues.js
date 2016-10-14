@@ -33,6 +33,11 @@ function slackDataStore(robot) {
 }
 
 function fileIssue(response) {
+  // ReactionMessage (node_modules/hubot-slack/src/reaction-message.coffee) will
+  // trim the 'reaction_' prefix from 'reaction_added'. The slack-github-issues
+  // library requires we put it back.
+  response.message.type = 'reaction_' + response.message.type;
+
   return this.execute(response.message)
     .then(function(issueUrl) {
       response.reply('created: ' + issueUrl);
