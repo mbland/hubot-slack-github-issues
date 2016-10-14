@@ -15,13 +15,17 @@ describe('SlackRtmDataStore', function() {
     rtmDataStore = new SlackRtmDataStore(helpers.rtmClient());
   });
 
-  it('should return a Promise from getChannelInfo', function() {
-    return rtmDataStore.getChannelById(helpers.CHANNEL_ID)
+  it('returns the team ID directly', function() {
+    rtmDataStore.teamId().should.equal(helpers.TEAM_ID);
+  });
+
+  it('returns a Promise from channelById', function() {
+    return rtmDataStore.channelById(helpers.CHANNEL_ID)
       .should.become({ id: helpers.CHANNEL_ID, name: helpers.CHANNEL_NAME });
   });
 
-  it('should return a Promise from getTeamInfo', function() {
-    return rtmDataStore.getTeamInfo(helpers.CHANNEL_ID)
+  it('returns a Promise from teamInfo', function() {
+    return rtmDataStore.teamInfo(helpers.CHANNEL_ID)
       .should.become({ domain: helpers.TEAM_DOMAIN });
   });
 });

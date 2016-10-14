@@ -87,9 +87,11 @@ describe('Middleware', function() {
       messageLock = sinon.stub(messageLock);
       logger = sinon.stub(logger);
 
-      slackClient.getChannel.returns(
+      slackClient.messageId.returns(helpers.MESSAGE_ID);
+      slackClient.permalink.returns(helpers.PERMALINK);
+      slackClient.channelInfo.returns(
         Promise.resolve({id: helpers.CHANNEL_ID, name: helpers.CHANNEL_NAME}));
-      slackClient.getTeam.returns(
+      slackClient.teamInfo.returns(
         Promise.resolve({id: helpers.TEAM_ID, domain: helpers.TEAM_DOMAIN}));
 
       messageLock.lock.onFirstCall()
@@ -186,7 +188,8 @@ describe('Middleware', function() {
     it('reports an error when getting the channel info', function() {
       var errorMessage = 'failed to get channel info: test failure';
 
-      slackClient.getChannel.returns(Promise.reject(new Error('test failure')));
+      slackClient.channelInfo
+        .returns(Promise.reject(new Error('test failure')));
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
@@ -199,7 +202,7 @@ describe('Middleware', function() {
     it('reports an error when getting the team info', function() {
       var errorMessage = 'failed to get team info: test failure';
 
-      slackClient.getTeam.returns(Promise.reject(new Error('test failure')));
+      slackClient.teamInfo.returns(Promise.reject(new Error('test failure')));
 
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
@@ -296,7 +299,7 @@ describe('Middleware', function() {
       var errorMessage = 'unhandled error: Error\nmessage: ' +
             JSON.stringify(helpers.reactionAddedMessage(), null, 2);
 
-      slackClient.getChannel.throws();
+      slackClient.channelInfo.throws();
       return middleware.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           logger.error.args.should.eql([[null, errorMessage]]);

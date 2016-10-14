@@ -11,14 +11,18 @@ chai.should();
 chai.use(chaiAsPromised);
 
 function SlackDataStoreStub() {
-  this.getChannelById = function(_, getChannelInfoFromApi) {
-    return getChannelInfoFromApi().then(function(response) {
+  this.teamId = function() {
+    return helpers.TEAM_ID;
+  };
+
+  this.channelById = function(_, channelInfoFromApi) {
+    return channelInfoFromApi().then(function(response) {
       return response.channel;
     });
   };
 
-  this.getTeamInfo = function(getTeamInfoFromApi) {
-    return getTeamInfoFromApi().then(function(response) {
+  this.teamInfo = function(teamInfoFromApi) {
+    return teamInfoFromApi().then(function(response) {
       return response.team;
     });
   };
@@ -66,22 +70,40 @@ describe('SlackClient', function() {
     });
   });
 
-  describe('getChannel', function() {
+  describe('messageId', function() {
+    it('uses the team ID and the item channel ID and timestamp', function() {
+      slackClient.messageId(helpers.reactionAddedMessage())
+        .should.eql(helpers.MESSAGE_ID);
+    });
+  });
+
+  describe('permalink', function() {
+    it('uses the team domain name, channel name, and timestamp', function() {
+      var teamInfo = { domain: helpers.TEAM_DOMAIN },
+          channelInfo = { name: helpers.CHANNEL_NAME },
+          message = helpers.reactionAddedMessage();
+
+      slackClient.permalink(teamInfo, channelInfo, message)
+        .should.eql(helpers.PERMALINK);
+    });
+  });
+
+  describe('channelInfo', function() {
     it('should pass an API call to retrieve the info', function() {
       params = { channel: helpers.CHANNEL_ID, token: config.slackApiToken };
       payload = { ok: true, channel: { name: helpers.CHANNEL_NAME } };
       setResponse('/api/channels.info', params, 200, payload);
-      return slackClient.getChannel(helpers.CHANNEL_ID)
+      return slackClient.channelInfo(helpers.CHANNEL_ID)
         .should.become({ name: helpers.CHANNEL_NAME });
     });
   });
 
-  describe('getTeam', function() {
+  describe('teamInfo', function() {
     it('should pass an API call to retrieve the info', function() {
       params = { token: config.slackApiToken };
       payload = { ok: true, team: { domain: helpers.TEAM_DOMAIN } };
       setResponse('/api/team.info', params, 200, payload);
-      return slackClient.getTeam()
+      return slackClient.teamInfo()
         .should.become({ domain: helpers.TEAM_DOMAIN });
     });
   });

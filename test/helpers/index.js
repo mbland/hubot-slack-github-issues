@@ -16,7 +16,7 @@ exports = module.exports = {
   TIMESTAMP: '1360782804.083113',
   PERMALINK: 'https://mbland.slack.com/archives/bot-dev/p1360782804083113',
   ISSUE_URL: 'https://github.com/mbland/slack-github-issues/issues/1',
-  MESSAGE_ID: 'C5150OU812:1360782804.083113',
+  MESSAGE_ID: 'T19845150:C5150OU812:1360782804.083113',
 
   baseConfig: function() {
     return JSON.parse(JSON.stringify(testConfig));
