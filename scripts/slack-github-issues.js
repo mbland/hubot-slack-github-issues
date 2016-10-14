@@ -9,59 +9,57 @@
 'use strict';
 
 var path = require('path');
-var Config = require('../lib/config');
-var SlackRtmDataStore = require('../lib/slack-rtm-data-store');
-var SlackClient = require('../lib/slack-client');
-var GitHubClient = require('../lib/github-client');
-var MessageLock = require('../lib/message-lock');
-var Logger = require('../lib/logger');
-var ReactionIssueFiler = require('../lib/reaction-issue-filer');
+var slackGitHubIssues = require('../lib');
 
-function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
-  var defaultConfigPath = path.join('config', 'slack-github-issues.json'),
-      updates = {
-        slackApiToken: process.env.HUBOT_SLACK_TOKEN,
-        githubApiToken: process.env.HUBOT_GITHUB_TOKEN
-      };
-  return Config.fromFile(
-    process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH || defaultConfigPath,
-    logger, updates);
+var configParams = {
+  path: function() {
+    return process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
+      path.join('config', 'slack-github-issues.json');
+  },
+
+  updates: function() {
+    return {
+      slackApiToken: process.env.HUBOT_SLACK_TOKEN,
+      githubApiToken: process.env.HUBOT_GITHUB_TOKEN
+    };
+  }
+};
+
+function slackDataStore(robot) {
+  // This may be undefined when running under test.
+  if (robot.adapter.client) {
+    return slackGitHubIssues.slackRtmDataStore(robot.adapter.client);
+  }
+}
+
+function fileIssue(response) {
+  return this.execute(response.message)
+    .then(function(issueUrl) {
+      response.reply('created: ' + issueUrl);
+      return issueUrl;
+    })
+    .catch(function(err) {
+      if (err) {
+        response.reply(err.message || err);
+      }
+      return Promise.reject(err);
+    });
 }
 
 module.exports = function(robot) {
-  var logger, config, slackDataStore, impl, fileIssue;
-
-  // This will be undefined when running under test.
-  if (robot.adapter.client) {
-    slackDataStore = new SlackRtmDataStore(robot.adapter.client.rtm);
-  }
+  var logger, config, reactionIssueFiler, listener;
 
   try {
-    logger = new Logger(robot.logger);
-    config = parseConfigFromEnvironmentVariablePathOrUseDefault(logger);
-    impl = new ReactionIssueFiler(
-      config,
-      new SlackClient(slackDataStore, config),
-      new GitHubClient(config),
-      new MessageLock,
-      logger);
+    logger = slackGitHubIssues.logger(robot.logger);
+    config = slackGitHubIssues.configFromFile(
+      configParams.path(), logger, configParams.updates());
+    reactionIssueFiler = slackGitHubIssues.slackBotReactionIssueFiler(
+      config, slackDataStore(robot), logger);
 
-    fileIssue = function(response) {
-      return impl.execute(response.message)
-        .then(function(issueUrl) {
-          response.reply('created: ' + issueUrl);
-          return issueUrl;
-        })
-        .catch(function(err) {
-          if (err) {
-            response.reply(err.message || err);
-          }
-          return Promise.reject(err);
-        });
-    };
-    fileIssue.impl = impl;
+    listener = fileIssue.bind(reactionIssueFiler);
+    listener.impl = reactionIssueFiler;
 
-    robot.react(fileIssue);
+    robot.react(listener);
     logger.info(null, 'listening for reaction_added events');
 
   } catch (err) {
