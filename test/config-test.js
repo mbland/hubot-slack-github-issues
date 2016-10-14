@@ -83,13 +83,34 @@ describe('Config', function() {
   });
 
   it('should load valid configuration', function() {
-    var testConfig = require('./helpers/test-config.json'),
+    var testConfig = helpers.baseConfig(),
         logger = new Logger(console),
         configPath = path.join(__dirname, 'helpers', 'test-config.json'),
         config;
 
     sinon.stub(logger, 'info');
-    config = Config.parseConfigFile(configPath, logger);
+    config = Config.fromFile(configPath, logger);
+    expect(JSON.stringify(config)).to.eql(JSON.stringify(testConfig));
+    expect(logger.info.args).to.eql([
+      [null, 'reading configuration from', configPath]
+    ]);
+  });
+
+  it('loads a valid configuration with updates', function() {
+    var testConfig = helpers.baseConfig(),
+        logger = new Logger(console),
+        configPath = path.join(__dirname, 'helpers', 'test-config.json'),
+        overrides = {
+          slackApiToken: '<updated-slack-token>',
+          githubApiToken: '<updated-github-token>'
+        },
+        config;
+
+    sinon.stub(logger, 'info');
+    testConfig.slackApiToken = '<updated-slack-token>';
+    testConfig.githubApiToken = '<updated-github-token>';
+    config = Config.fromFile(configPath, logger, overrides);
+
     expect(JSON.stringify(config)).to.eql(JSON.stringify(testConfig));
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', configPath]
@@ -99,10 +120,10 @@ describe('Config', function() {
   it('should raise an error if the config file does not exist', function() {
     var logger = new Logger(console),
         configPath = path.join(__dirname, 'nonexistent-config-file'),
-        errorMessage = 'failed to load configuration from ' + configPath + ': ';
+        errorMessage = 'failed to load configuration: ';
 
     sinon.stub(logger, 'info');
-    expect(function() { return Config.parseConfigFile(configPath, logger); })
+    expect(function() { return Config.fromFile(configPath, logger); })
       .to.throw(Error, errorMessage);
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', configPath]
@@ -111,11 +132,10 @@ describe('Config', function() {
 
   it('should raise an error if the config file isn\'t valid JSON', function() {
     var logger = new Logger(console),
-        errorMessage = 'failed to load configuration from ' + __filename +
-          ': invalid JSON: ';
+        errorMessage = 'failed to load configuration: invalid JSON: ';
 
     sinon.stub(logger, 'info');
-    expect(function() { return Config.parseConfigFile(__filename, logger); })
+    expect(function() { return Config.fromFile(__filename, logger); })
       .to.throw(Error, errorMessage);
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', __filename]

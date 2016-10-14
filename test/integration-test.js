@@ -182,7 +182,7 @@ describe('Integration test', function() {
       logHelper.filteredMessages().should.eql([
         'INFO reading configuration from ' + invalidConfigPath,
         'ERROR reaction_added listener registration failed: ' +
-          'Invalid configuration:'
+          'failed to load configuration: Invalid configuration:'
       ]);
       logHelper.messages[logHelper.messages.length - 1].should.have.string(
         'Invalid configuration:\n  missing rules');

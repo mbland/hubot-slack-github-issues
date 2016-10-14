@@ -18,19 +18,14 @@ var Logger = require('../lib/logger');
 var ReactionIssueFiler = require('../lib/reaction-issue-filer');
 
 function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
-  var configPath = (
-        process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
-        path.join('config', 'slack-github-issues.json')
-      ),
-      config = Config.parseConfigFile(configPath, logger);
-
-  if (process.env.HUBOT_GITHUB_TOKEN) {
-    config.githubApiToken = process.env.HUBOT_GITHUB_TOKEN;
-  }
-  if (process.env.HUBOT_SLACK_TOKEN) {
-    config.slackApiToken = process.env.HUBOT_SLACK_TOKEN;
-  }
-  return config;
+  var defaultConfigPath = path.join('config', 'slack-github-issues.json'),
+      updates = {
+        slackApiToken: process.env.HUBOT_SLACK_TOKEN,
+        githubApiToken: process.env.HUBOT_GITHUB_TOKEN
+      };
+  return Config.fromFile(
+    process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH || defaultConfigPath,
+    logger, updates);
 }
 
 module.exports = function(robot) {
@@ -43,8 +38,7 @@ module.exports = function(robot) {
 
   try {
     logger = new Logger(robot.logger);
-    config = new Config(
-      parseConfigFromEnvironmentVariablePathOrUseDefault(logger));
+    config = parseConfigFromEnvironmentVariablePathOrUseDefault(logger);
     impl = new ReactionIssueFiler(
       config,
       new SlackClient(slackDataStore, config),

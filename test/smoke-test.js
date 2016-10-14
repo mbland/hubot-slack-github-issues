@@ -83,7 +83,8 @@ describe('Smoke test', function() {
     process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = path.join(
       __dirname, 'helpers', 'test-config-invalid.json');
     checkHubot(done, function(output) {
-      output.should.have.string(FAILURE_MESSAGE + 'Invalid configuration:',
+      output.should.have.string(FAILURE_MESSAGE +
+        'failed to load configuration: Invalid configuration:',
         'script didn\'t emit expected error');
     });
   });
