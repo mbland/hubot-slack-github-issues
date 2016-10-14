@@ -15,7 +15,7 @@ var SlackClient = require('../lib/slack-client');
 var GitHubClient = require('../lib/github-client');
 var MessageLock = require('../lib/message-lock');
 var Logger = require('../lib/logger');
-var Middleware = require('../lib/middleware');
+var ReactionIssueFiler = require('../lib/reaction-issue-filer');
 
 function parseConfigFromEnvironmentVariablePathOrUseDefault(logger) {
   var configPath = (
@@ -45,7 +45,7 @@ module.exports = function(robot) {
     logger = new Logger(robot.logger);
     config = new Config(
       parseConfigFromEnvironmentVariablePathOrUseDefault(logger));
-    impl = new Middleware(
+    impl = new ReactionIssueFiler(
       config,
       new SlackClient(slackDataStore, config),
       new GitHubClient(config),

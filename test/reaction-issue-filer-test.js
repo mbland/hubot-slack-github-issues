@@ -1,6 +1,6 @@
 'use strict';
 
-var Middleware = require('../lib/middleware');
+var ReactionIssueFiler = require('../lib/reaction-issue-filer');
 var Config = require('../lib/config');
 var Rule = require('../lib/rule');
 var GitHubClient = require('../lib/github-client');
@@ -18,7 +18,7 @@ chai.should();
 chai.use(chaiAsPromised);
 chai.use(chaiThings);
 
-describe('Middleware', function() {
+describe('ReactionIssueFiler', function() {
   var config, slackClient, githubClient, messageLock, logger, middleware;
 
   beforeEach(function() {
@@ -27,8 +27,8 @@ describe('Middleware', function() {
     githubClient = new GitHubClient(config);
     messageLock = new MessageLock;
     logger = new Logger(console);
-    middleware = new Middleware(config, slackClient, githubClient, messageLock,
-      logger);
+    middleware = new ReactionIssueFiler(config, slackClient, githubClient,
+      messageLock, logger);
   });
 
   describe('findMatchingRule', function() {
