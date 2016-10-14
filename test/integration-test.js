@@ -200,9 +200,10 @@ describe('Integration test', function() {
       ]);
       logHelper.filteredMessages().should.eql(
         initLogMessages().concat(wrapInfoMessages([
+          'processing: ' + helpers.PERMALINK,
           'matches rule: ' + matchingRule,
-          'getting reactions for ' + helpers.PERMALINK,
-          'making GitHub request for ' + helpers.PERMALINK,
+          'getting reactions',
+          'filing GitHub issue in mbland/slack-github-issues',
           'adding ' + config.successReaction,
           'created: ' + helpers.ISSUE_URL
         ]))
@@ -214,8 +215,7 @@ describe('Integration test', function() {
     var payload = { message: 'test failure' },
         url = '/github/repos/mbland/slack-github-issues/issues',
         response = apiStubServer.urlsToResponses[url],
-        errorReply = 'failed to create a GitHub issue in ' +
-          'mbland/slack-github-issues: ' +
+        errorReply = 'failed to create a GitHub issue: ' +
           'received 500 response from GitHub API: ' + JSON.stringify(payload);
 
     response.statusCode = 500;
@@ -230,9 +230,10 @@ describe('Integration test', function() {
         ]);
 
         logMessages = initLogMessages().concat(wrapInfoMessages([
+          'processing: ' + helpers.PERMALINK,
           'matches rule: ' + matchingRule,
-          'getting reactions for ' + helpers.PERMALINK,
-          'making GitHub request for ' + helpers.PERMALINK
+          'getting reactions',
+          'filing GitHub issue in mbland/slack-github-issues'
         ]));
         logMessages.push('ERROR ' + helpers.MESSAGE_ID + ': ' + errorReply);
         logHelper.filteredMessages().should.eql(logMessages);

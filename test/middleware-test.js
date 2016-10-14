@@ -108,9 +108,11 @@ describe('Middleware', function() {
           var matchingRule = new Rule(helpers.baseConfig().rules[0]);
 
           logger.info.args.should.eql([
+            helpers.logArgs('processing:', helpers.PERMALINK),
             helpers.logArgs('matches rule:', matchingRule.toLogString()),
-            helpers.logArgs('getting reactions for', helpers.PERMALINK),
-            helpers.logArgs('making GitHub request for', helpers.PERMALINK),
+            helpers.logArgs('getting reactions'),
+            helpers.logArgs('filing GitHub issue in ' +
+              'mbland/slack-github-issues'),
             helpers.logArgs('adding', helpers.baseConfig().successReaction),
             helpers.logArgs('created: ' + helpers.ISSUE_URL)
           ]);
@@ -168,7 +170,9 @@ describe('Middleware', function() {
           messageLock.unlock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
           logger.info.args.should.include.something.that.deep.equals(
-            helpers.logArgs('already processed:', helpers.PERMALINK));
+            helpers.logArgs('processing:', helpers.PERMALINK));
+          logger.info.args.should.include.something.that.deep.equals(
+            helpers.logArgs('already processed'));
         });
     });
 
@@ -220,8 +224,7 @@ describe('Middleware', function() {
     });
 
     it('should receive a message but fail to get reactions', function() {
-      var errorMessage = 'failed to get reactions for ' + helpers.PERMALINK +
-        ': test failure';
+      var errorMessage = 'failed to get reactions: test failure';
 
       slackClient.getReactions
         .returns(Promise.reject(new Error('test failure')));
@@ -238,8 +241,7 @@ describe('Middleware', function() {
     });
 
     it('should get reactions but fail to file an issue', function() {
-      var errorMessage = 'failed to create a GitHub issue in ' +
-        'mbland/slack-github-issues: test failure';
+      var errorMessage = 'failed to create a GitHub issue: test failure';
 
       githubClient.fileNewIssue
         .returns(Promise.reject(new Error('test failure')));
@@ -275,8 +277,7 @@ describe('Middleware', function() {
     });
 
     it('reports an error when releasing the message lock', function() {
-      var errorMessage = 'failed to release lock for ' + helpers.PERMALINK +
-        ': test failure';
+      var errorMessage = 'failed to release lock: test failure';
 
       messageLock.unlock.returns(Promise.reject(new Error('test failure')));
 
