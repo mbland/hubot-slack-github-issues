@@ -127,16 +127,15 @@ describe('ReactionIssueFiler', function() {
       message.type = 'reaction_removed';
       return reactor.execute(message).should.be.rejectedWith(null)
         .then(function() {
-          messageLock.lock.calledOnce.should.be.true;
-          messageLock.unlock.calledOnce.should.be.true;
+          messageLock.lock.calledOnce.should.be.false;
+          messageLock.unlock.calledOnce.should.be.false;
         });
     });
 
     it('should not file another issue for the same message when ' +
       'one is in progress', function() {
-      var result;
+      var result = reactor.execute(message);
 
-      result = reactor.execute(message);
       return reactor.execute(message).should.be.rejectedWith(null)
         .then(function() {
           return result.should.become(helpers.ISSUE_URL).then(function() {
@@ -151,6 +150,51 @@ describe('ReactionIssueFiler', function() {
             messageLock.lock.returns(Promise.resolve(helpers.MESSAGE_ID));
             return reactor.execute(message).should.become(helpers.ISSUE_URL);
           });
+        });
+    });
+
+    // The message lock should only be held _after_ an event matches a Rule to
+    // avoid a race condition in a distributed environment. This reproduced a
+    // bug from an earlier version whereby reactor.execute() would always issue
+    // a lock request (via a Promise) at the beginning of the operation.
+    //
+    // In this test, the first call to reactor.execute() should not try to grab
+    // the lock at all since it will not find a Rule matching its argument. In
+    // the buggy code that always issued a lock request Promise, since Promise
+    // operations are pushed into the event loop in order of creation, the
+    // first, nonmatching call would always issue its request before the second,
+    // matching version. Hence, the nonmatching procedure would acquire the
+    // lock, and the matching procedure would not.
+    //
+    // In the next iteration of the event loop, the nonmatching procedure would
+    // see that its message didn't match a Rule and would release the lock
+    // before aborting the operation. However, the matching procedure would
+    // subsequently see that the message matched a Rule, but that it failed to
+    // acquire the lock, and would abort assuming another instance was already
+    // processing the message. Hence, the message that _did_ receive a matching
+    // reaction would remain unprocessed because of a race condition.
+    //
+    // It's a nice property of the event loop and Promises that you can simulate
+    // distributed system race conditions in a controlled, synchronous fashion
+    // without spawning multiple processes. It's also reminiscent of the Go
+    // channel/Communicating Sequential Processes model.
+    it('only acquires a lock after a message matches a Rule', function() {
+      var nonmatchingMessage, nonmatchingResult, matchingResult;
+
+      nonmatchingMessage = helpers.reactionAddedMessage();
+      nonmatchingMessage.reaction = 'bogomoji';
+      nonmatchingResult = reactor.execute(nonmatchingMessage);
+      matchingResult = reactor.execute(message);
+
+      return nonmatchingResult.should.be.rejectedWith(null)
+        .then(function() {
+          // Before the bugfix, the next assertion would fail with:
+          //   Error: Promise rejected with no or falsy reason
+          return matchingResult.should.become(helpers.ISSUE_URL)
+            .then(function() {
+              messageLock.lock.calledOnce.should.be.true;
+              messageLock.unlock.calledOnce.should.be.true;
+            });
         });
     });
 
@@ -193,8 +237,8 @@ describe('ReactionIssueFiler', function() {
 
       return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
-          messageLock.lock.calledOnce.should.be.true;
-          messageLock.unlock.calledOnce.should.be.true;
+          messageLock.lock.calledOnce.should.be.false;
+          messageLock.unlock.calledOnce.should.be.false;
           checkErrorResponse(errorMessage);
         });
     });
@@ -206,8 +250,8 @@ describe('ReactionIssueFiler', function() {
 
       return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
-          messageLock.lock.calledOnce.should.be.true;
-          messageLock.unlock.calledOnce.should.be.true;
+          messageLock.lock.calledOnce.should.be.false;
+          messageLock.unlock.calledOnce.should.be.false;
           checkErrorResponse(errorMessage);
         });
     });
