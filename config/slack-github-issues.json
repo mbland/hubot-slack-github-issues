@@ -5,7 +5,7 @@
   "successReaction": "heavy_check_mark",
   "rules": [
     {
-      "reactionName": "evergreen_tree",
+      "reactionName": "book",
       "githubRepository": "slack-github-issues"
     }
   ]
