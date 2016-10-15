@@ -19,7 +19,7 @@ chai.use(chaiAsPromised);
 chai.use(chaiThings);
 
 describe('ReactionIssueFiler', function() {
-  var config, slackClient, githubClient, messageLock, logger, middleware;
+  var config, slackClient, githubClient, messageLock, logger, reactor;
 
   beforeEach(function() {
     config = new Config(helpers.baseConfig());
@@ -27,7 +27,7 @@ describe('ReactionIssueFiler', function() {
     githubClient = new GitHubClient(config);
     messageLock = new MessageLock;
     logger = new Logger(console);
-    middleware = new ReactionIssueFiler(config, slackClient, githubClient,
+    reactor = new ReactionIssueFiler(config, slackClient, githubClient,
       messageLock, logger);
   });
 
@@ -41,7 +41,7 @@ describe('ReactionIssueFiler', function() {
 
     it('should find the rule matching the message', function() {
       var expected = config.rules[1],
-          result = middleware.findMatchingRule(message, channelName);
+          result = reactor.findMatchingRule(message, channelName);
 
       result.reactionName.should.equal(expected.reactionName);
       result.githubRepository.should.equal(expected.githubRepository);
@@ -49,29 +49,29 @@ describe('ReactionIssueFiler', function() {
     });
 
     it('should ignore a message if it is undefined', function() {
-      expect(middleware.findMatchingRule(undefined, channelName))
+      expect(reactor.findMatchingRule(undefined, channelName))
         .to.be.undefined;
     });
 
     it('should ignore a message if its type does not match', function() {
       message.type = 'hello';
-      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
+      expect(reactor.findMatchingRule(message, channelName)).to.be.undefined;
     });
 
     it('should ignore a message if its item type does not match', function() {
       message.item.type = 'file';
-      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
+      expect(reactor.findMatchingRule(message, channelName)).to.be.undefined;
     });
 
     it('should ignore messages that do not match any rule', function() {
       message.reaction = 'sad-face';
-      expect(middleware.findMatchingRule(message, channelName)).to.be.undefined;
+      expect(reactor.findMatchingRule(message, channelName)).to.be.undefined;
     });
   });
 
   describe('parseMetadata', function() {
     it('should parse GitHub request metadata from a message', function() {
-      middleware.parseMetadata(helpers.messageWithReactions(), 'bot-dev')
+      reactor.parseMetadata(helpers.messageWithReactions(), 'bot-dev')
         .should.eql(helpers.metadata());
     });
   });
@@ -107,7 +107,7 @@ describe('ReactionIssueFiler', function() {
     });
 
     it('should receive a message and file an issue', function() {
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.become(helpers.ISSUE_URL).then(function() {
           var matchingRule = new Rule(helpers.baseConfig().rules[0]);
 
@@ -125,7 +125,7 @@ describe('ReactionIssueFiler', function() {
 
     it('should ignore messages that do not match', function() {
       message.type = 'reaction_removed';
-      return middleware.execute(message).should.be.rejectedWith(null)
+      return reactor.execute(message).should.be.rejectedWith(null)
         .then(function() {
           messageLock.lock.calledOnce.should.be.true;
           messageLock.unlock.calledOnce.should.be.true;
@@ -136,8 +136,8 @@ describe('ReactionIssueFiler', function() {
       'one is in progress', function() {
       var result;
 
-      result = middleware.execute(message);
-      return middleware.execute(message).should.be.rejectedWith(null)
+      result = reactor.execute(message);
+      return reactor.execute(message).should.be.rejectedWith(null)
         .then(function() {
           return result.should.become(helpers.ISSUE_URL).then(function() {
             messageLock.lock.calledTwice.should.be.true;
@@ -149,7 +149,7 @@ describe('ReactionIssueFiler', function() {
             // the message will have a successReaction after the first
             // successful request, but we'll test that in another case.
             messageLock.lock.returns(Promise.resolve(helpers.MESSAGE_ID));
-            return middleware.execute(message).should.become(helpers.ISSUE_URL);
+            return reactor.execute(message).should.become(helpers.ISSUE_URL);
           });
         });
     });
@@ -165,7 +165,7 @@ describe('ReactionIssueFiler', function() {
       });
       slackClient.getReactions.returns(Promise.resolve(messageWithReactions));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(null).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
@@ -191,7 +191,7 @@ describe('ReactionIssueFiler', function() {
       slackClient.channelInfo
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           messageLock.unlock.calledOnce.should.be.true;
@@ -204,7 +204,7 @@ describe('ReactionIssueFiler', function() {
 
       slackClient.teamInfo.returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           messageLock.unlock.calledOnce.should.be.true;
@@ -218,7 +218,7 @@ describe('ReactionIssueFiler', function() {
       messageLock.lock.onFirstCall()
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           messageLock.unlock.calledOnce.should.be.false;
@@ -232,7 +232,7 @@ describe('ReactionIssueFiler', function() {
       slackClient.getReactions
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
@@ -249,7 +249,7 @@ describe('ReactionIssueFiler', function() {
       githubClient.fileNewIssue
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
@@ -268,7 +268,7 @@ describe('ReactionIssueFiler', function() {
       slackClient.addSuccessReaction
         .returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
@@ -284,7 +284,7 @@ describe('ReactionIssueFiler', function() {
 
       messageLock.unlock.returns(Promise.reject(new Error('test failure')));
 
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           messageLock.lock.calledOnce.should.be.true;
           slackClient.getReactions.calledOnce.should.be.true;
@@ -300,7 +300,7 @@ describe('ReactionIssueFiler', function() {
         JSON.stringify(helpers.reactionAddedMessage(), null, 0);
 
       slackClient.channelInfo.throws();
-      return middleware.execute(message)
+      return reactor.execute(message)
         .should.be.rejectedWith(errorMessage).then(function() {
           logger.error.args.should.eql([[helpers.MESSAGE_ID, errorMessage]]);
         });
