@@ -2,44 +2,69 @@
 
 var testConfig = require('./test-config.json');
 var SlackClient = require('../../lib/slack-client');
-var Hubot = require('hubot');
-var SlackBot = require('hubot-slack');
+var User = require('@slack/client/lib/models/user');
+var ReactionMessage = require('hubot-slack/src/reaction-message');
 
 exports = module.exports = {
   REACTION: 'evergreen_tree',
+  TEAM_ID: 'T19845150',
+  TEAM_DOMAIN: 'mbland',
   USER_ID: 'U5150OU812',
+  ITEM_USER_ID: 'U1984OU812',
   CHANNEL_ID: 'C5150OU812',
+  CHANNEL_NAME: 'bot-dev',
   TIMESTAMP: '1360782804.083113',
-  PERMALINK: 'https://18f.slack.com/archives/handbook/p1360782804083113',
-  ISSUE_URL: 'https://github.com/18F/handbook/issues/1',
-  MESSAGE_ID: 'C5150OU812:1360782804.083113',
+  PERMALINK: 'https://mbland.slack.com/archives/bot-dev/p1360782804083113',
+  ISSUE_URL: 'https://github.com/mbland/slack-github-issues/issues/1',
+  MESSAGE_ID: 'T19845150:C5150OU812:1360782804.083113',
 
   baseConfig: function() {
     return JSON.parse(JSON.stringify(testConfig));
   },
 
+  rtmClient: function() {
+    return {
+      dataStore: {
+        getChannelById: function(channelId) {
+          return { id: channelId, name: exports.CHANNEL_NAME };
+        },
+        teams: {
+          T19845150: { domain: exports.TEAM_DOMAIN }
+        }
+      },
+      activeTeamId: exports.TEAM_ID
+    };
+  },
+
+  // https://api.slack.com/events/reaction_added
   reactionAddedMessage: function() {
     return {
       type: SlackClient.REACTION_ADDED,
       user: exports.USER_ID,
+      reaction: exports.REACTION,
+      item_user: exports.ITEM_USER_ID, // eslint-disable-line camelcase
       item: {
         type: 'message',
         channel: exports.CHANNEL_ID,
         ts: exports.TIMESTAMP
       },
-      reaction: exports.REACTION,
       'event_ts': exports.TIMESTAMP
     };
   },
 
   fullReactionAddedMessage: function() {
-    var user, text, message;
-
-    user = new Hubot.User(exports.USER_ID,
-      { id: exports.USER_ID, name: 'jquser', room: 'handbook' });
-    text = exports.REACTION;
+    var user, itemUser, message;
     message = exports.reactionAddedMessage();
-    return new SlackBot.SlackTextMessage(user, text, text, message);
+
+    // https://api.slack.com/types/user
+    // node_modules/hubot-slack/src/bot.coffee
+    user = new User({ id: message.user, name: 'jquser' });
+    user.room = message.item.channel;
+    itemUser = new User({ id: message.item_user, name: 'rando' });
+
+    // node_modules/hubot-slack/src/reaction-message.coffee
+    return new ReactionMessage(message.type, user, message.reaction,
+      itemUser, message.item, message.event_ts);
   },
 
   messageWithReactions: function() {
@@ -59,11 +84,12 @@ exports = module.exports = {
 
   metadata: function() {
     return {
-      channel: 'handbook',
+      channel: exports.CHANNEL_NAME,
       timestamp: exports.TIMESTAMP,
       url: exports.PERMALINK,
       date: new Date(1360782804.083113 * 1000),
-      title: 'Update from #handbook at Wed, 13 Feb 2013 19:13:24 GMT'
+      title: 'Update from #' + exports.CHANNEL_NAME +
+        ' at Wed, 13 Feb 2013 19:13:24 GMT'
     };
   },
 
@@ -76,5 +102,24 @@ exports = module.exports = {
     }
     args.unshift(exports.MESSAGE_ID);
     return args;
+  },
+
+  // resolveNextTick and rejectNextTick ensure that the event loop is flushed
+  // after a Promise is resolved or rejected.
+  //
+  // Usage:
+  //   var helpers = require('./helpers');
+  //   funcReturningPromise()
+  //     .then(helpers.resolveNextTick, helpers.rejectNextTick);
+  resolveNextTick: function(value) {
+    return new Promise(function(resolve) {
+      process.nextTick(function() { resolve(value); });
+    });
+  },
+
+  rejectNextTick: function(err) {
+    return new Promise(function(_, reject) {
+      process.nextTick(function() { reject(err); });
+    });
   }
 };

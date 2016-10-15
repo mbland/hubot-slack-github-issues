@@ -9,22 +9,28 @@ var expect = chai.expect;
 
 var rootDir = path.dirname(__dirname);
 var scriptName = require(path.join(rootDir, 'package.json')).name;
-var SUCCESS_MESSAGE = scriptName + ': registered receiveMiddleware';
-var FAILURE_MESSAGE = scriptName + ': receiveMiddleware registration failed: ';
+var SUCCESS_MESSAGE = scriptName + ': listening for reaction_added events';
+var FAILURE_MESSAGE = scriptName +
+  ': reaction_added listener registration failed: ';
 
 describe('Smoke test', function() {
   var checkHubot;
 
   beforeEach(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
   after(function() {
+    delete process.env.HUBOT_GITHUB_TOKEN;
+    delete process.env.HUBOT_SLACK_TOKEN;
     delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
   });
 
   checkHubot = function(done, validateOutput) {
-    exec('hubot -t', { cwd: rootDir }, function(error, stdout, stderr) {
+    var hubotCmd = 'hubot -t --adapter slack';
+    exec(hubotCmd, { cwd: rootDir }, function(error, stdout, stderr) {
       try {
         expect(error).to.be.null;
         stderr.should.eql('');
@@ -57,6 +63,8 @@ describe('Smoke test', function() {
   });
 
   it('should register successfully using the default config', function(done) {
+    process.env.HUBOT_GITHUB_TOKEN = '<github-api-token>';
+    process.env.HUBOT_SLACK_TOKEN = '<slack-api-token>';
     checkHubot(done, function(output) {
       output.should.have.string(SUCCESS_MESSAGE, 'script not registered');
     });
@@ -75,7 +83,8 @@ describe('Smoke test', function() {
     process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = path.join(
       __dirname, 'helpers', 'test-config-invalid.json');
     checkHubot(done, function(output) {
-      output.should.have.string(FAILURE_MESSAGE + 'Invalid configuration:',
+      output.should.have.string(FAILURE_MESSAGE +
+        'failed to load configuration: Invalid configuration:',
         'script didn\'t emit expected error');
     });
   });

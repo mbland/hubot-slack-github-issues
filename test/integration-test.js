@@ -2,6 +2,8 @@
 
 var Helper = require('hubot-test-helper');
 var scriptHelper = new Helper('../scripts/slack-github-issues.js');
+var SlackRtmDataStore = require('../lib/slack-rtm-data-store.js');
+var Channel = require('@slack/client/lib/models/channel');
 var LogHelper = require('./helpers/log-helper');
 var ApiStubServer = require('./helpers/api-stub-server.js');
 var helpers = require('./helpers');
@@ -12,19 +14,25 @@ var scriptName = require('../package.json').name;
 var chai = require('chai');
 var chaiAsPromised = require('chai-as-promised');
 
+// The Robot.react method is defined in the hubot-slack adapter package. We need
+// to make sure the function definition executes before executing the script.
+require('hubot-slack');
+
 chai.should();
 chai.use(chaiAsPromised);
 
 describe('Integration test', function() {
-  var room, logHelper, apiStubServer, config, apiServerDefaults,
-      patchReactMethodOntoRoom, sendReaction, initLogMessages, wrapInfoMessages,
-      matchingRule = 'Rule { reactionName: \'evergreen_tree\', ' +
-        'githubRepository: \'handbook\' }';
+  var room, listenerCallbackPromise, logHelper, apiStubServer, config,
+      apiServerDefaults, patchReactMethodOntoRoom, patchListenerCallbackAndImpl,
+      sendReaction, initLogMessages, wrapInfoMessages,
+      matchingRule = 'reactionName: evergreen_tree, ' +
+        'githubRepository: slack-github-issues, ' +
+        'channelNames: bot-dev';
 
   before(function(done) {
     apiStubServer = new ApiStubServer();
-    process.env.HUBOT_SLACK_TOKEN = '<18F-github-token>';
-    process.env.HUBOT_GITHUB_TOKEN = '<18F-github-token>';
+    process.env.HUBOT_SLACK_TOKEN = '<hubot-slack-api-token>';
+    process.env.HUBOT_GITHUB_TOKEN = '<hubot-github-api-token>';
     config = helpers.baseConfig();
     config.slackApiBaseUrl = apiStubServer.address() + '/slack/';
     config.githubApiBaseUrl = apiStubServer.address() + '/github/';
@@ -56,15 +64,10 @@ describe('Integration test', function() {
   beforeEach(function() {
     logHelper = new LogHelper();
     logHelper.capture(function() {
-      room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
+      room = scriptHelper.createRoom({ httpd: false, name: 'bot-dev' });
     });
     patchReactMethodOntoRoom(room);
-    room.robot.middleware.receive.stack[0].impl.slackClient.client = {
-      getChannelByID: function() {
-        return { name: 'handbook' };
-      },
-      team: { domain: '18f' }
-    };
+    patchListenerCallbackAndImpl(room);
     apiStubServer.urlsToResponses = apiServerDefaults();
   });
 
@@ -81,7 +84,7 @@ describe('Integration test', function() {
         statusCode: 200,
         payload: helpers.messageWithReactions()
       },
-      '/github/repos/18F/handbook/issues': {
+      '/github/repos/mbland/slack-github-issues/issues': {
         expectedParams: {
           title: metadata.title,
           body: metadata.url
@@ -111,9 +114,31 @@ describe('Integration test', function() {
 
         room.messages.push([userName, reaction]);
         reactionMessage.user.name = userName;
-        reactionMessage.rawMessage.reaction = reaction;
+        reactionMessage.reaction = reaction;
         room.robot.receive(reactionMessage, resolve);
       });
+    };
+  };
+
+  patchListenerCallbackAndImpl = function(room) {
+    var listener, callback;
+
+    listener = room.robot.listeners[0];
+    callback = listener.callback;
+    callback.impl.slackClient.dataStore = new SlackRtmDataStore({
+      dataStore: {
+        getChannelById: function(channelId) {
+          return new Channel({ id: channelId, name: 'bot-dev' });
+        },
+        teams: {
+          T19845150: { domain: 'mbland' }
+        }
+      },
+      activeTeamId: 'T19845150'
+    });
+
+    listener.callback = function(response) {
+      listenerCallbackPromise = callback(response);
     };
   };
 
@@ -121,7 +146,7 @@ describe('Integration test', function() {
     return [
       'INFO reading configuration from ' +
         process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH,
-      'INFO registered receiveMiddleware'
+      'INFO listening for reaction_added events'
     ];
   };
 
@@ -134,6 +159,8 @@ describe('Integration test', function() {
   sendReaction = function(reactionName) {
     logHelper.beginCapture();
     return room.user.react('mbland', reactionName)
+      .then(function() { return listenerCallbackPromise; })
+      .then(helpers.resolveNextTick, helpers.rejectNextTick)
       .then(logHelper.endCaptureResolve(), logHelper.endCaptureReject());
   };
 
@@ -150,11 +177,12 @@ describe('Integration test', function() {
       process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = invalidConfigPath;
       logHelper = new LogHelper();
       logHelper.capture(function() {
-        room = scriptHelper.createRoom({ httpd: false, name: 'handbook' });
+        room = scriptHelper.createRoom({ httpd: false, name: 'bot-dev' });
       });
       logHelper.filteredMessages().should.eql([
         'INFO reading configuration from ' + invalidConfigPath,
-        'ERROR receiveMiddleware registration failed: Invalid configuration:'
+        'ERROR reaction_added listener registration failed: ' +
+          'failed to load configuration: Invalid configuration:'
       ]);
       logHelper.messages[logHelper.messages.length - 1].should.have.string(
         'Invalid configuration:\n  missing rules');
@@ -172,9 +200,10 @@ describe('Integration test', function() {
       ]);
       logHelper.filteredMessages().should.eql(
         initLogMessages().concat(wrapInfoMessages([
+          'processing: ' + helpers.PERMALINK,
           'matches rule: ' + matchingRule,
-          'getting reactions for ' + helpers.PERMALINK,
-          'making GitHub request for ' + helpers.PERMALINK,
+          'getting reactions',
+          'filing GitHub issue in mbland/slack-github-issues',
           'adding ' + config.successReaction,
           'created: ' + helpers.ISSUE_URL
         ]))
@@ -184,30 +213,31 @@ describe('Integration test', function() {
 
   it('should fail to create a GitHub issue', function() {
     var payload = { message: 'test failure' },
-        url = '/github/repos/18F/handbook/issues',
-        response = apiStubServer.urlsToResponses[url];
+        url = '/github/repos/mbland/slack-github-issues/issues',
+        response = apiStubServer.urlsToResponses[url],
+        errorReply = 'failed to create a GitHub issue: ' +
+          'received 500 response from GitHub API: ' + JSON.stringify(payload);
 
     response.statusCode = 500;
     response.payload = payload;
-    return sendReaction(helpers.REACTION).should.be.fulfilled.then(function() {
-      var errorReply = 'failed to create a GitHub issue in ' +
-            '18F/handbook: received 500 response from GitHub API: ' +
-            JSON.stringify(payload),
-          logMessages;
+    return sendReaction(helpers.REACTION)
+      .should.be.rejectedWith(errorReply).then(function() {
+        var logMessages;
 
-      room.messages.should.eql([
-        ['mbland', 'evergreen_tree'],
-        ['hubot', '@mbland Error: ' + errorReply]
-      ]);
+        room.messages.should.eql([
+          ['mbland', 'evergreen_tree'],
+          ['hubot', '@mbland ' + errorReply]
+        ]);
 
-      logMessages = initLogMessages().concat(wrapInfoMessages([
-        'matches rule: ' + matchingRule,
-        'getting reactions for ' + helpers.PERMALINK,
-        'making GitHub request for ' + helpers.PERMALINK
-      ]));
-      logMessages.push('ERROR ' + helpers.MESSAGE_ID + ': ' + errorReply);
-      logHelper.filteredMessages().should.eql(logMessages);
-    });
+        logMessages = initLogMessages().concat(wrapInfoMessages([
+          'processing: ' + helpers.PERMALINK,
+          'matches rule: ' + matchingRule,
+          'getting reactions',
+          'filing GitHub issue in mbland/slack-github-issues'
+        ]));
+        logMessages.push('ERROR ' + helpers.MESSAGE_ID + ': ' + errorReply);
+        logHelper.filteredMessages().should.eql(logMessages);
+      });
   });
 
   it('should ignore a message receiving an unknown reaction', function() {
@@ -218,9 +248,10 @@ describe('Integration test', function() {
       response.payload = { message: 'should not happen' };
     });
 
-    return sendReaction('sad-face').should.be.fulfilled.then(function() {
-      room.messages.should.eql([['mbland', 'sad-face']]);
-      logHelper.filteredMessages().should.eql(initLogMessages());
-    });
+    return sendReaction('sad-face').should.be.rejectedWith(null)
+      .then(function() {
+        room.messages.should.eql([['mbland', 'sad-face']]);
+        logHelper.filteredMessages().should.eql(initLogMessages());
+      });
   });
 });

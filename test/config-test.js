@@ -10,14 +10,6 @@ var chai = require('chai');
 var expect = chai.expect;
 
 describe('Config', function() {
-  before(function() {
-    delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
-  });
-
-  afterEach(function() {
-    delete process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH;
-  });
-
   it('should validate a valid configuration', function() {
     var configData = helpers.baseConfig(),
         config = new Config(configData);
@@ -27,8 +19,10 @@ describe('Config', function() {
 
   it('should raise errors for missing required fields', function() {
     var errors = [
+          'missing githubApiToken',
           'missing githubUser',
           'missing githubTimeout',
+          'missing slackApiToken',
           'missing slackTimeout',
           'missing successReaction',
           'missing rules'
@@ -64,7 +58,7 @@ describe('Config', function() {
     configData.rules[0].xyzzy = 'plugh';
     configData.rules.push({
       'reactionName': 'smiley',
-      'githubRepository': '18F/hubot-slack-github-issues',
+      'githubRepository': 'mbland/slack-github-issues',
       'channelNames': ['hub'],
       'quux': {}
     });
@@ -88,29 +82,35 @@ describe('Config', function() {
       .to.throw(Error, errorMessage);
   });
 
-  it('should load from HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH', function() {
-    var testConfig = require('./helpers/test-config.json'),
+  it('should load valid configuration', function() {
+    var testConfig = helpers.baseConfig(),
         logger = new Logger(console),
         configPath = path.join(__dirname, 'helpers', 'test-config.json'),
         config;
 
-    process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = configPath;
     sinon.stub(logger, 'info');
-    config = new Config(null, logger);
+    config = Config.fromFile(configPath, logger);
     expect(JSON.stringify(config)).to.eql(JSON.stringify(testConfig));
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', configPath]
     ]);
   });
 
-  it('should load from config/slack-github-issues.json by default', function() {
-    var testConfig = require('../config/slack-github-issues.json'),
+  it('loads a valid configuration with updates', function() {
+    var testConfig = helpers.baseConfig(),
         logger = new Logger(console),
-        configPath = path.join('config', 'slack-github-issues.json'),
+        configPath = path.join(__dirname, 'helpers', 'test-config.json'),
+        overrides = {
+          slackApiToken: '<updated-slack-token>',
+          githubApiToken: '<updated-github-token>'
+        },
         config;
 
     sinon.stub(logger, 'info');
-    config = new Config(null, logger);
+    testConfig.slackApiToken = '<updated-slack-token>';
+    testConfig.githubApiToken = '<updated-github-token>';
+    config = Config.fromFile(configPath, logger, overrides);
+
     expect(JSON.stringify(config)).to.eql(JSON.stringify(testConfig));
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', configPath]
@@ -120,11 +120,10 @@ describe('Config', function() {
   it('should raise an error if the config file does not exist', function() {
     var logger = new Logger(console),
         configPath = path.join(__dirname, 'nonexistent-config-file'),
-        errorMessage = 'failed to load configuration from ' + configPath + ': ';
+        errorMessage = 'failed to load configuration: ';
 
-    process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = configPath;
     sinon.stub(logger, 'info');
-    expect(function() { return new Config(null, logger); })
+    expect(function() { return Config.fromFile(configPath, logger); })
       .to.throw(Error, errorMessage);
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', configPath]
@@ -133,12 +132,10 @@ describe('Config', function() {
 
   it('should raise an error if the config file isn\'t valid JSON', function() {
     var logger = new Logger(console),
-        errorMessage = 'failed to load configuration from ' + __filename +
-          ': invalid JSON: ';
+        errorMessage = 'failed to load configuration: invalid JSON: ';
 
-    process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH = __filename;
     sinon.stub(logger, 'info');
-    expect(function() { return new Config(null, logger); })
+    expect(function() { return Config.fromFile(__filename, logger); })
       .to.throw(Error, errorMessage);
     expect(logger.info.args).to.eql([
       [null, 'reading configuration from', __filename]
@@ -156,8 +153,8 @@ describe('Config', function() {
           githubRepository: 'hubot-slack-github-issues'
         },
         { reactionName: 'evergreen_tree',
-          githubRepository: 'hub',
-          channelNames: ['hub']
+          githubRepository: 'slack-github-issues',
+          channelNames: ['bot-dev']
         },
         { reactionName: 'evergreen_tree',
           githubRepository: 'handbook'
@@ -182,8 +179,8 @@ describe('Config', function() {
           githubRepository: 'handbook'
         },
         { reactionName: 'evergreen_tree',
-          githubRepository: 'hub',
-          channelNames: ['hub']
+          githubRepository: 'slack-github-issues',
+          channelNames: ['bot-dev']
         },
         { reactionName: 'smiley',
           githubRepository: 'hubot-slack-github-issues'
