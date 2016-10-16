@@ -67,7 +67,7 @@ exports = module.exports = {
       itemUser, message.item, message.event_ts);
   },
 
-  messageWithReactions: function() {
+  getReactionsResponse: function() {
     return {
       ok: true,
       type: 'message',

@@ -71,7 +71,7 @@ describe('ReactionIssueFiler', function() {
 
   describe('parseMetadata', function() {
     it('should parse GitHub request metadata from a message', function() {
-      reactor.parseMetadata(helpers.messageWithReactions(), {name: 'bot-dev'})
+      reactor.parseMetadata(helpers.getReactionsResponse(), {name: 'bot-dev'})
         .should.eql(helpers.metadata());
     });
   });
@@ -99,7 +99,7 @@ describe('ReactionIssueFiler', function() {
       messageLock.lock.onSecondCall().returns(Promise.resolve(false));
 
       slackClient.getReactions
-        .returns(Promise.resolve(helpers.messageWithReactions()));
+        .returns(Promise.resolve(helpers.getReactionsResponse()));
       githubClient.fileNewIssue.returns(Promise.resolve(helpers.ISSUE_URL));
       slackClient.addSuccessReaction
         .returns(Promise.resolve(helpers.ISSUE_URL));
@@ -200,14 +200,14 @@ describe('ReactionIssueFiler', function() {
 
     it('should not file another issue for the same message when ' +
       'one is already filed ', function() {
-      var messageWithReactions = helpers.messageWithReactions();
+      var getReactionsResponse = helpers.getReactionsResponse();
 
-      messageWithReactions.message.reactions.push({
+      getReactionsResponse.message.reactions.push({
         name: config.successReaction,
         count: 1,
         users: [ helpers.USER_ID ]
       });
-      slackClient.getReactions.returns(Promise.resolve(messageWithReactions));
+      slackClient.getReactions.returns(Promise.resolve(getReactionsResponse));
 
       return reactor.execute(message)
         .should.be.rejectedWith(null).then(function() {

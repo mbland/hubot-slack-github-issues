@@ -82,7 +82,7 @@ describe('Integration test', function() {
           token: process.env.HUBOT_SLACK_TOKEN
         },
         statusCode: 200,
-        payload: helpers.messageWithReactions()
+        payload: helpers.getReactionsResponse()
       },
       '/github/repos/mbland/slack-github-issues/issues': {
         expectedParams: {

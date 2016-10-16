@@ -115,7 +115,7 @@ describe('SlackClient', function() {
         timestamp: helpers.TIMESTAMP,
         token: config.slackApiToken
       };
-      payload = helpers.messageWithReactions();
+      payload = helpers.getReactionsResponse();
     });
 
     it('should make a successful request', function() {
