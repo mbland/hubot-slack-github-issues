@@ -71,7 +71,7 @@ describe('ReactionIssueFiler', function() {
 
   describe('parseMetadata', function() {
     it('should parse GitHub request metadata from a message', function() {
-      reactor.parseMetadata(helpers.messageWithReactions(), 'bot-dev')
+      reactor.parseMetadata(helpers.messageWithReactions(), {name: 'bot-dev'})
         .should.eql(helpers.metadata());
     });
   });
