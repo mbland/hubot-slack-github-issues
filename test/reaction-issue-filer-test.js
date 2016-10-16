@@ -123,6 +123,26 @@ describe('ReactionIssueFiler', function() {
         });
     });
 
+    it('files an issue if successReaction not among reactions', function() {
+      var getReactionsResponse = helpers.getReactionsResponse();
+
+      getReactionsResponse.message.reactions.push({
+        name: 'thumbsup',
+        count: 1,
+        users: [ helpers.USER_ID ]
+      });
+      slackClient.getReactions.returns(Promise.resolve(getReactionsResponse));
+
+      return reactor.execute(message).should.become(helpers.ISSUE_URL)
+        .then(function() {
+          messageLock.lock.calledOnce.should.be.true;
+          slackClient.getReactions.calledOnce.should.be.true;
+          githubClient.fileNewIssue.called.should.be.true;
+          slackClient.addSuccessReaction.called.should.be.true;
+          messageLock.unlock.calledOnce.should.be.true;
+        });
+    });
+
     it('should ignore messages that do not match', function() {
       message.type = 'reaction_removed';
       return reactor.execute(message).should.be.rejectedWith(null)
@@ -216,7 +236,6 @@ describe('ReactionIssueFiler', function() {
           githubClient.fileNewIssue.called.should.be.false;
           slackClient.addSuccessReaction.called.should.be.false;
           messageLock.unlock.calledOnce.should.be.true;
-          slackClient.getReactions.calledOnce.should.be.true;
           logger.info.args.should.include.something.that.deep.equals(
             helpers.logArgs('processing:', helpers.PERMALINK));
           logger.info.args.should.include.something.that.deep.equals(
