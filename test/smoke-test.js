@@ -50,10 +50,12 @@ describe('Smoke test', function() {
         scriptPath;
 
     robot.logger.info = sinon.spy();
+    robot.logger.error = sinon.spy();
     robot.loadFile = sinon.spy();
     entryPoint(robot);
     robot.logger.info.args.should.have.deep.property('[0]')
       .that.deep.equals([scriptName + ':', 'loading']);
+    robot.logger.error.called.should.be.false;
     robot.loadFile.calledOnce.should.be.true;
 
     scriptPath = path.join.apply(null, robot.loadFile.args[0]);
