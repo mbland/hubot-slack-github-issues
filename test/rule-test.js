@@ -29,10 +29,6 @@ describe('Rule', function() {
   };
 
   describe('toLogString', function() {
-    it('should return the empty string for an empty Rule', function() {
-      expect(new Rule({}).toLogString()).to.eql('');
-    });
-
     it('should stringify a Rule with channel names defined', function() {
       var configRule = makeConfigRule();
       configRule.channelNames.push('general');
