@@ -11,19 +11,17 @@
 var path = require('path');
 var slackGitHubIssues = require('../lib');
 
-var configParams = {
-  path: function() {
-    return process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
-      path.join('config', 'slack-github-issues.json');
-  },
+function configParams() {
+  var params = {updates: {}};
 
-  updates: function() {
-    return {
-      slackApiToken: process.env.HUBOT_SLACK_TOKEN,
-      githubApiToken: process.env.HUBOT_GITHUB_TOKEN
-    };
-  }
-};
+  params.path = process.env.HUBOT_SLACK_GITHUB_ISSUES_CONFIG_PATH ||
+    path.join('config', 'slack-github-issues.json');
+
+  params.updates.slackApiToken = process.env.HUBOT_SLACK_TOKEN;
+  params.updates.githubApiToken = process.env.HUBOT_GITHUB_TOKEN;
+
+  return params;
+}
 
 function slackDataStore(robot) {
   // This may be undefined when running under test.
@@ -32,13 +30,13 @@ function slackDataStore(robot) {
   }
 }
 
-function fileIssue(response) {
+function fileIssue(filer, response) {
   // ReactionMessage (node_modules/hubot-slack/src/reaction-message.coffee) will
   // trim the 'reaction_' prefix from 'reaction_added'. The slack-github-issues
   // library requires we put it back.
   response.message.type = 'reaction_' + response.message.type;
 
-  return this.execute(response.message)
+  return filer.execute(response.message)
     .then(function(issueUrl) {
       response.reply('created: ' + issueUrl);
       return issueUrl;
@@ -52,17 +50,17 @@ function fileIssue(response) {
 }
 
 module.exports = function(robot) {
-  var logger, config, reactionIssueFiler, listener;
+  var logger = robot.logger,
+      filer,
+      listener = function(response) {
+        return fileIssue(filer, response);
+      };
 
   try {
-    logger = slackGitHubIssues.logger(robot.logger);
-    config = slackGitHubIssues.configFromFile(
-      configParams.path(), logger, configParams.updates());
-    reactionIssueFiler = slackGitHubIssues.slackBotReactionIssueFiler(
-      config, slackDataStore(robot), logger);
-
-    listener = fileIssue.bind(reactionIssueFiler);
-    listener.impl = reactionIssueFiler;
+    logger = slackGitHubIssues.logger(logger);
+    filer = slackGitHubIssues.singleInstanceReactionIssueFiler(
+      configParams(), slackDataStore(robot), logger);
+    listener.impl = filer;
 
     robot.react(listener);
     logger.info(null, 'listening for reaction_added events');
