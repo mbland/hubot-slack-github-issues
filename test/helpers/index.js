@@ -1,7 +1,7 @@
 'use strict';
 
 var testConfig = require('./test-config.json');
-var SlackClient = require('../../lib/slack-client');
+var constants = require('../../lib/constants');
 var User = require('@slack/client/lib/models/user');
 var ReactionMessage = require('hubot-slack/src/reaction-message');
 
@@ -39,7 +39,7 @@ exports = module.exports = {
   // https://api.slack.com/events/reaction_added
   reactionAddedMessage: function() {
     return {
-      type: SlackClient.REACTION_ADDED,
+      type: constants.REACTION_ADDED,
       user: exports.USER_ID,
       reaction: exports.REACTION,
       item_user: exports.ITEM_USER_ID, // eslint-disable-line camelcase

@@ -1,6 +1,7 @@
 'use strict';
 
 var Logger = require('../lib/logger');
+var constants = require('../lib/constants');
 var sinon = require('sinon');
 var chai = require('chai');
 
@@ -33,19 +34,21 @@ describe('Logger', function() {
   it('should prefix info messages with the script name', function() {
     logger.info(null, 'this', 'is', 'a', 'test');
     infoSpy.calledOnce.should.be.true;
-    infoSpy.args[0].should.eql([Logger.PREFIX, 'this', 'is', 'a', 'test']);
+    infoSpy.args[0].should.eql(
+      [constants.LOGGER_PREFIX, 'this', 'is', 'a', 'test']);
   });
 
   it('should prefix info messages with the script name + msg ID', function() {
     logger.info('U5150+COU812', 'msgID', 'test');
     infoSpy.calledOnce.should.be.true;
     infoSpy.args[0].should.eql(
-      [Logger.PREFIX, 'U5150+COU812:', 'msgID', 'test']);
+      [constants.LOGGER_PREFIX, 'U5150+COU812:', 'msgID', 'test']);
   });
 
   it('should prefix error messages with the script name', function() {
     logger.error(null, 'this', 'is', 'a', 'test');
     errorSpy.calledOnce.should.be.true;
-    errorSpy.args[0].should.eql([Logger.PREFIX, 'this', 'is', 'a', 'test']);
+    errorSpy.args[0].should.eql(
+      [constants.LOGGER_PREFIX, 'this', 'is', 'a', 'test']);
   });
 });

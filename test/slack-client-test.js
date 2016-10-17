@@ -1,6 +1,7 @@
 'use strict';
 
 var SlackClient = require('../lib/slack-client');
+var constants = require('../lib/constants');
 var ApiStubServer = require('./helpers/api-stub-server');
 var helpers = require('./helpers');
 var url = require('url');
@@ -63,10 +64,10 @@ describe('SlackClient', function() {
       slackClient.requestFactory.globalAgent.protocol.should.eql('http:');
     });
 
-    it('should parse API_BASE_URL if config base URL undefined', function() {
-      var slackClient = new SlackClient(undefined, helpers.baseConfig());
-      url.format(slackClient.baseurl).should.eql(SlackClient.API_BASE_URL);
-      slackClient.requestFactory.globalAgent.protocol.should.eql('https:');
+    it('parses SLACK_API_BASE_URL if config base URL undefined', function() {
+      var client = new SlackClient(undefined, helpers.baseConfig());
+      url.format(client.baseurl).should.eql(constants.SLACK_API_BASE_URL);
+      client.requestFactory.globalAgent.protocol.should.eql('https:');
     });
   });
 

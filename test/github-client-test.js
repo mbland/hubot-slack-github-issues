@@ -1,6 +1,7 @@
 'use strict';
 
 var GitHubClient = require('../lib/github-client');
+var constants = require('../lib/constants');
 var ApiStubServer = require('./helpers/api-stub-server');
 var helpers = require('./helpers');
 var url = require('url');
@@ -48,10 +49,10 @@ describe('GitHubClient', function() {
       githubClient.requestFactory.globalAgent.protocol.should.eql('http:');
     });
 
-    it('should parse API_BASE_URL if config base URL undefined', function() {
-      var githubClient = new GitHubClient(helpers.baseConfig());
-      url.format(githubClient.baseurl).should.eql(GitHubClient.API_BASE_URL);
-      githubClient.requestFactory.globalAgent.protocol.should.eql('https:');
+    it('parses GITHUB_API_BASE_URL if config base URL undefined', function() {
+      var client = new GitHubClient(helpers.baseConfig());
+      url.format(client.baseurl).should.eql(constants.GITHUB_API_BASE_URL);
+      client.requestFactory.globalAgent.protocol.should.eql('https:');
     });
   });
 

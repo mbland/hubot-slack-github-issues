@@ -1,6 +1,7 @@
-var sinon = require('sinon');
+'use strict';
 
-var LOGGER_PREFIX = require('../../lib/logger').PREFIX;
+var constants = require('../../lib/constants');
+var sinon = require('sinon');
 
 module.exports = LogHelper;
 
@@ -60,7 +61,7 @@ LogHelper.prototype.filteredMessages = function() {
   return this.messages.map(function(message) {
     var match = message.match(logFilter);
 
-    if (match && match[2] === LOGGER_PREFIX) {
+    if (match && match[2] === constants.LOGGER_PREFIX) {
       return match[1] + ' ' + match[3];
     }
     return message;
