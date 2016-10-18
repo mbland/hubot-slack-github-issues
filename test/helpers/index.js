@@ -2,8 +2,6 @@
 
 var testConfig = require('./test-config.json');
 var constants = require('../../lib/constants');
-var User = require('@slack/client/lib/models/user');
-var ReactionMessage = require('hubot-slack/src/reaction-message');
 
 exports = module.exports = {
   REACTION: 'evergreen_tree',
@@ -50,21 +48,6 @@ exports = module.exports = {
       },
       'event_ts': exports.TIMESTAMP
     };
-  },
-
-  fullReactionAddedMessage: function() {
-    var user, itemUser, message;
-    message = exports.reactionAddedMessage();
-
-    // https://api.slack.com/types/user
-    // node_modules/hubot-slack/src/bot.coffee
-    user = new User({ id: message.user, name: 'jquser' });
-    user.room = message.item.channel;
-    itemUser = new User({ id: message.item_user, name: 'rando' });
-
-    // node_modules/hubot-slack/src/reaction-message.coffee
-    return new ReactionMessage(message.type, user, message.reaction,
-      itemUser, message.item, message.event_ts);
   },
 
   getReactionsResponse: function() {

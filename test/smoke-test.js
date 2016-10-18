@@ -13,6 +13,8 @@ var SUCCESS_MESSAGE = scriptName + ': listening for reaction_added events';
 var FAILURE_MESSAGE = scriptName +
   ': reaction_added listener registration failed: ';
 
+chai.should();
+
 describe('Smoke test', function() {
   var checkHubot;
 
@@ -45,14 +47,14 @@ describe('Smoke test', function() {
   };
 
   it('should successfully load the index.js entry point', function(done) {
-    var entryPoint = require('../index'),
+    var slackGitHubIssues = require('../lib/index'),
         robot = { logger: {} },
         scriptPath;
 
     robot.logger.info = sinon.spy();
     robot.logger.error = sinon.spy();
     robot.loadFile = sinon.spy();
-    entryPoint(robot);
+    slackGitHubIssues.loadHubotScript(robot);
     robot.logger.info.args.should.have.deep.property('[0]')
       .that.deep.equals([scriptName + ':', 'loading']);
     robot.logger.error.called.should.be.false;

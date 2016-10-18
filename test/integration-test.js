@@ -1,7 +1,11 @@
 'use strict';
 
+require('coffee-script/register');
 var Helper = require('hubot-test-helper');
 var scriptHelper = new Helper('../scripts/slack-github-issues.js');
+var User = require('@slack/client/lib/models/user');
+var ReactionMessage = require('hubot-slack/src/reaction-message');
+
 var SlackRtmDataStore = require('../lib/slack-rtm-data-store.js');
 var Channel = require('@slack/client/lib/models/channel');
 var LogHelper = require('./helpers/log-helper');
@@ -23,9 +27,9 @@ chai.use(chaiAsPromised);
 
 describe('Integration test', function() {
   var room, listenerCallbackPromise, logHelper, apiStubServer, config,
-      apiServerDefaults, patchReactMethodOntoRoom, patchListenerCallbackAndImpl,
-      sendReaction, initLogMessages, wrapInfoMessages,
-      matchingRule = 'reactionName: evergreen_tree, ' +
+      apiServerDefaults, reactionAddedMessage, patchReactMethodOntoRoom,
+      patchListenerCallbackAndImpl, sendReaction, initLogMessages,
+      wrapInfoMessages, matchingRule = 'reactionName: evergreen_tree, ' +
         'githubRepository: slack-github-issues, ' +
         'channelNames: bot-dev';
 
@@ -107,10 +111,25 @@ describe('Integration test', function() {
     };
   };
 
+  reactionAddedMessage = function() {
+    var user, itemUser, message;
+    message = helpers.reactionAddedMessage();
+
+    // https://api.slack.com/types/user
+    // node_modules/hubot-slack/src/bot.coffee
+    user = new User({ id: message.user, name: 'jquser' });
+    user.room = message.item.channel;
+    itemUser = new User({ id: message.item_user, name: 'rando' });
+
+    // node_modules/hubot-slack/src/reaction-message.coffee
+    return new ReactionMessage(message.type, user, message.reaction,
+      itemUser, message.item, message.event_ts);
+  };
+
   patchReactMethodOntoRoom = function(room) {
     room.user.react = function(userName, reaction) {
       return new Promise(function(resolve) {
-        var reactionMessage = helpers.fullReactionAddedMessage();
+        var reactionMessage = reactionAddedMessage();
 
         room.messages.push([userName, reaction]);
         reactionMessage.user.name = userName;

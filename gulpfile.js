@@ -6,8 +6,6 @@ var istanbul = require('gulp-istanbul');
 
 var TEST_DEPENDENCIES = getTestDependencies();
 
-require('coffee-script/register');
-
 function buildArgs(args) {
   var argName, skipArgs = { _: true, '$0': true };
 

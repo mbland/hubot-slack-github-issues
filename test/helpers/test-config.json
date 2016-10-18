@@ -1,6 +1,6 @@
 {
-  "githubApiToken": "<github-api-token>",
   "githubUser": "mbland",
+  "githubApiToken": "<github-api-token>",
   "githubTimeout": 5000,
   "slackApiToken": "<slack-api-token>",
   "slackTimeout": 5000,
