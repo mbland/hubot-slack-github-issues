@@ -42,10 +42,13 @@ function fileIssue(filer, response) {
       return issueUrl;
     })
     .catch(function(err) {
+      var result = err;
+
       if (err) {
-        response.reply(err.message || err);
+        result = err.message || err;
+        response.reply(result);
       }
-      return Promise.reject(err);
+      return result;
     });
 }
 

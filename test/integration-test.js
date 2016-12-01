@@ -26,7 +26,7 @@ chai.should();
 chai.use(chaiAsPromised);
 
 describe('Integration test', function() {
-  var room, listenerCallbackPromise, logHelper, apiStubServer, config,
+  var room, listenerResult, logHelper, apiStubServer, config,
       apiServerDefaults, reactionAddedMessage, patchReactMethodOntoRoom,
       patchListenerCallbackAndImpl, sendReaction, initLogMessages,
       wrapInfoMessages, matchingRule = 'reactionName: evergreen_tree, ' +
@@ -37,6 +37,7 @@ describe('Integration test', function() {
     apiStubServer = new ApiStubServer();
     process.env.HUBOT_SLACK_TOKEN = '<hubot-slack-api-token>';
     process.env.HUBOT_GITHUB_TOKEN = '<hubot-github-api-token>';
+    delete process.env.HUBOT_LOG_LEVEL;
     config = helpers.baseConfig();
     config.slackApiBaseUrl = apiStubServer.address() + '/slack/';
     config.githubApiBaseUrl = apiStubServer.address() + '/github/';
@@ -157,7 +158,7 @@ describe('Integration test', function() {
     });
 
     listener.callback = function(response) {
-      listenerCallbackPromise = callback(response);
+      listenerResult = callback(response);
     };
   };
 
@@ -178,7 +179,7 @@ describe('Integration test', function() {
   sendReaction = function(reactionName) {
     logHelper.beginCapture();
     return room.user.react('mbland', reactionName)
-      .then(function() { return listenerCallbackPromise; })
+      .then(function() { return listenerResult; })
       .then(helpers.resolveNextTick, helpers.rejectNextTick)
       .then(logHelper.endCaptureResolve(), logHelper.endCaptureReject());
   };
@@ -239,8 +240,8 @@ describe('Integration test', function() {
 
     response.statusCode = 500;
     response.payload = payload;
-    return sendReaction(helpers.REACTION)
-      .should.be.rejectedWith(errorReply).then(function() {
+    return sendReaction(helpers.REACTION).should.become(errorReply)
+      .then(function() {
         var logMessages;
 
         room.messages.should.eql([
@@ -267,10 +268,9 @@ describe('Integration test', function() {
       response.payload = { message: 'should not happen' };
     });
 
-    return sendReaction('sad-face').should.be.rejectedWith(null)
-      .then(function() {
-        room.messages.should.eql([['mbland', 'sad-face']]);
-        logHelper.filteredMessages().should.eql(initLogMessages());
-      });
+    return sendReaction('sad-face').should.become(null).then(function() {
+      room.messages.should.eql([['mbland', 'sad-face']]);
+      logHelper.filteredMessages().should.eql(initLogMessages());
+    });
   });
 });
