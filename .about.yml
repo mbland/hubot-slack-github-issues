@@ -20,11 +20,13 @@ owner_type: project
 
 # Maturity stage of the project (required)
 # values: discovery, alpha, beta, live, sunset, transfer, end
-stage: discovery
+stage: live
 
 # Description of the project
 description: |
-  Hubot script using the Slack Real Time Messaging API to file GitHub issues
+  When a [Slack](https://slack.com/) chat message receives a specific emoji
+  reaction, this [Hubot](https://hubot.github.com/) script creates a
+  [GitHub](https://github.com/) issue with a link to that message.
 
 # Tags that describe the project or aspects of the project
 tags:
@@ -33,7 +35,7 @@ tags:
 
 # Should this repo have automated tests? If so, set to `true`. (required)
 # values: true, false
-testable: true
+testable: false
 
 # Team members contributing to the project (required)
 # Items:
@@ -66,7 +68,6 @@ stack:
 - Hubot
 - Mocha
 - Chai
-- Gulp
 
 # Brief description of the project's outcomes
 # impact:
@@ -87,8 +88,8 @@ stack:
 #     url: URL for the text of the license
 licenses:
   hubot-slack-github-issues:
-    name: CC0
-    url: https://github.com/18F/hubot-slack-github-issues/blob/master/LICENSE.md
+    name: ISC
+    url: https://github.com/mbland/hubot-slack-github-issues/blob/master/LICENSE.md
 
 # Blogs or websites associated with project development
 #blog:
@@ -106,7 +107,7 @@ licenses:
 # - url: URL for the link
 #   text: Anchor text for the link
 contact:
-- url: mailto:michael.bland@gsa.gov
+- url: mailto:mbland@acm.org
   text: Mike Bland
-- url: https://github.com/18F/hubot-slack-github-issues/
+- url: https://github.com/mbland/hubot-slack-github-issues/issues
   text: GitHub issues
