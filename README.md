@@ -1,5 +1,7 @@
 # Slack-to-GitHub Issues Hubot Script: Uses Slack `reaction_added` events to file GitHub issues
 
+[![NPM](https://nodei.co/npm/hubot-slack-github-issues.png?compact=true)](https://nodei.co/npm/hubot-slack-github-issues/)<br/>
+
 Source: https://github.com/mbland/hubot-slack-github-issues
 
 When a [Slack](https://slack.com/) chat message receives a specific emoji
@@ -25,8 +27,8 @@ documentation.
    `hubot-slack` packages are installed, and set the necessary environment
    variables.
 
-1. In your Hubot repository, add `mbland/hubot-slack-github-issues` as a
-   `dependency`, then run `npm install`.
+1. In your Hubot repository, add `hubot-slack-github-issues` as a `dependency`,
+   then run `npm install`.
 
 1. Include the script in `external-scripts.json` in your Hubot repository:
    ```json
