@@ -1,5 +1,5 @@
 'use strict';
 
 module.exports = function(robot) {
-  require('slack-github-issues').loadHubotScript(robot);
+  require('slack-emoji-issues').loadHubotScript(robot);
 };

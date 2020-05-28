@@ -7,7 +7,7 @@
     "node": ">=4.2"
   },
   "dependencies": {
-    "slack-github-issues": "^1.0.0"
+    "slack-emoji-issues": "^1.0.0"
   },
   "peerDependencies": {
     "hubot": "^2.19.0",
